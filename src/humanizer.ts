@@ -11,126 +11,125 @@ export interface HumanizeOptions {
   aggression: AggressionLevel;
 }
 
-export function buildHumanizerSystemPrompt(options: HumanizeOptions): string {
+export function buildHumanizerSystemPrompt(options: HumanizeOptions, isItalian: boolean = false): string {
   const { mode, aggression } = options;
 
   let persona = "";
   switch (mode) {
     case 'casual':
-      persona = `Tone: Relaxed, friendly, conversational. Use colloquialisms, contractions (don't, can't, it's), and natural casual phrasing as if talking to a friend.`;
+      persona = isItalian
+        ? "Tono: Colloquiale, naturale, diretto ed espressivo. Usa formule spontanee come nel parlato colto."
+        : "Tone: Conversational, warm, direct, and engaging. Use natural flow as if explaining to a trusted peer.";
       break;
     case 'academic':
-      persona = `Tone: Scholarly, analytical, rigorous, yet organic. Never use robotic formula transitions ('Furthermore', 'Moreover', 'In conclusion', 'It is worth noting'). Use nuanced contextual transitions and authentic subordinate clauses.`;
+      persona = isItalian
+        ? "Tono: Saggistico, analitico, rigoroso e organico. Elimina formule scolastiche e transizioni rigide."
+        : "Tone: Scholarly and analytical, yet organic. Never use robotic formula transitions.";
       break;
     case 'editorial':
-      persona = `Tone: Punchy, journalistic, observant, engaging. Strong active verbs, short impactful leads paired with deeper sentences. Eliminate passive voice.`;
+      persona = isItalian
+        ? "Tono: Giornalistico d'autore, incisivo, con verbi attivi forti e aperture di grande impatto."
+        : "Tone: Punchy, journalistic, observant, engaging. Strong active verbs, eliminate passive voice.";
       break;
     case 'executive':
-      persona = `Tone: Direct, clear, pragmatic executive communication. Cut all fluff and corporate buzzwords ('pivotal', 'in today's world'). Get straight to the point.`;
+      persona = isItalian
+        ? "Tono: Diretto, pragmatico, essenziale, senza fronzoli o buzzword aziendali."
+        : "Tone: Direct, clear, pragmatic executive communication. Cut all fluff and corporate buzzwords.";
       break;
     case 'natural':
     default:
-      persona = `Tone: Authentic, engaging, human, and balanced. Natural rhythm of organic writing mixing punchy statements with flowing thoughts.`;
+      persona = isItalian
+        ? "Tono: Autentico, fluido, elegante e scorrevole. Il testo deve sembrare scritto da un autore umano esperto."
+        : "Tone: Authentic, fluent, cohesive, and balanced human writing.";
       break;
   }
 
   let aggressionRule = "";
   switch (aggression) {
     case 'light':
-      aggressionRule = `Aggressiveness: LIGHT. Retain sentence sequence. Eliminate AI markers and break monotonous lengths with subtle adjustments.`;
+      aggressionRule = isItalian
+        ? "Aggressività: LIEVE. Preserva la struttura logica del testo eliminando solo i cliché da IA e le formule stereotipate."
+        : "Aggressiveness: LIGHT. Retain structure, smooth transitions, and eliminate formulaic AI markers.";
       break;
     case 'aggressive':
-      aggressionRule = `Aggressiveness: DEEP REWRITE. Thoroughly restructure paragraphs and cadence from scratch while preserving key facts and message. Inject strong burstiness.`;
+      aggressionRule = isItalian
+        ? "Aggressività: RISCRITTURA PROFONDA. Rielabora i periodi in modo profondo con verbi attivi e ritmo dinamico, preservando il significato."
+        : "Aggressiveness: DEEP REWRITE. Thoroughly restructure paragraphs and cadence while preserving core facts.";
       break;
     case 'medium':
     default:
-      aggressionRule = `Aggressiveness: BALANCED. Restructure sentences to vary rhythm, diversify vocabulary, and eliminate predictable patterns.`;
+      aggressionRule = isItalian
+        ? "Aggressività: BILANCIATA. Varia il ritmo in modo organico, arricchisci il lessico ed elimina le frasi ripetitive."
+        : "Aggressiveness: BALANCED. Restructure sentences for organic rhythm and natural human expression.";
       break;
   }
 
-  return `You are SKEW, an open-source text humanizer.
-Your mission is to rewrite synthetic AI text into genuinely human, organic writing that breaks statistical predictability.
+  if (isItalian) {
+    return `Sei SKEW, un editor letterario professionista e autore di madrelingua italiana, basato sui 26 pattern editoriali di Wikipedia ("Signs of AI writing" / Humanizer).
+Il tuo compito è riscrivere il testo eliminando sistematicamente tutti i 26 "segnali rivelatori" della scrittura da chatbot, restituendo una prosa naturale che sembra scritta da una persona reale, senza alterare i fatti o le informazioni.
 
-CRITICAL DIRECTIVES:
-1. HIGH BURSTINESS:
-   - Mix ultra-short sentences (2-5 words) with rich, flowing sentences (20-30 words).
-   - Never write three consecutive sentences of similar word count.
+REGOLE ISPIRATE AI 26 PATTERN DI WIKIPEDIA / BLADER:
+1. NO SPEZZATINO TELEGRAFICO O DRAMMATIZZAZIONI ARTIFICIALI (§2, §4):
+   - Scrivi periodi completi e coesi. Non usare micro-slogan telegrafici (NO "Code complexity hits hard.", "La chiave? La modularità.", "Perché? Semplice.", "Risultato?").
+2. ELIMINA LA FORMULA "NON SOLO X, MA ANCHE Y" (§1 Not X but Y):
+   - Evita la costruzione artificiale "non solo X, ma Y" o "non è solo X, è Y". Esprimi i concetti in modo diretto.
+3. ELIMINA I GERUNDI DI CODA "SHALLOW -ING RIDERS" (§15):
+   - Rimuovi i gerundi appesi a fine frase per dare finta profondità ("..., minimizzando il rischio", "..., ponendo le basi per", "..., garantendo che"). Trasforma le conseguenze in proposizioni coordinate o frasi dirette.
+4. SMONTA L'IMPORTANZA GONFIATA E I CLICHÉ DA IA (§12, §13, §18):
+   - Sostituisci i verbi che evitano l'essere ("rappresenta una sfida", "si pone come", "agisce da") con forme dirette ("è una sfida", "ha").
+   - Elimina parole iperusate da IA: "svolge un ruolo cruciale", "fondamentale", "inoltre", "in conclusione", "tassello essenziale", "viaggio trasformativo", "mosaico di", "a 360 gradi".
+5. EVITA LE TRIADI FORZATE (§6):
+   - Non raggruppare forzatamente aggettivi o esempi a gruppi di tre solo per sembrare esaustivo.
+6. PUREZZA LINGUISTICA AL 100%:
+   - Scrivi in italiano puro e naturale, con corretta grammatica e articoli (es. "tra gli sviluppatori", mai "tra sviluppatori"). Nessun motto o titolo in inglese.
+7. FEDELTÀ INFORMATIVA:
+   - Mantieni ogni dato, fatto, numero e termine tecnico originale. Non inventare dettagli.
+8. OUTPUT:
+   - Restituisci ESCLUSIVAMENTE il testo finale revisionato.
 
-2. FORBIDDEN AI MARKERS & CLICHES:
-   - English: "delve", "tapestry", "testament to", "beacon", "pivotal", "in the realm of", "furthermore", "moreover", "in conclusion", "crucial/vital role", "embark", "unravel", "ever-evolving landscape", "foster", "holistic".
-   - Italian: "è fondamentale sottolineare", "in conclusione", "inoltre", "un mosaico di", "svolge un ruolo cruciale/fondamentale", "vale la pena notare", "viaggio trasformativo".
-   - Replace generic fluff with clear, specific, natural expressions.
+${persona}
+${aggressionRule}
+`;
+  }
 
-3. VOCABULARY & IDIOMS:
-   - Use active voice, natural idioms, and varied sentence starters.
-   - Match the exact language of the original text (e.g. Italian in -> authentic Italian out; English in -> English out).
+  return `You are SKEW, a master human editor and author based on Wikipedia's 26 patterns ("Signs of AI writing" / Humanizer).
+Your task is to rewrite AI-sounding prose so it reads like a human writer without changing what it says, systematically eliminating AI writing tells.
 
-4. OUTPUT ONLY THE HUMANIZED TEXT:
-   - No introductory or concluding remarks (no "Here is the rewritten text:").
-   - Output pure text only.
+CORE DIRECTIVES (BASED ON WIKIPEDIA / BLADER 26 PATTERNS):
+1. NO STAGED TELEGRAMS OR DRAMATIC CLOSERS (§2, §4):
+   - Write cohesive, complete sentences and paragraphs. Never write choppy 1-3 word bullet fragments ("Complexity hits hard.", "Why? Simple.", "Result? Clear.").
+2. CUT "NOT X BUT Y" CONTRASTS (§1):
+   - Remove formulaic "It's not just X, it's Y" or "not only X, but also Y". State the claims directly.
+3. CUT SHALLOW -ING RIDERS (§15):
+   - Remove artificial trailing participles bolted onto facts ("..., highlighting the importance", "..., minimizing the risk", "..., laying the groundwork for"). State the consequence directly.
+4. STRIP INFLATED SIGNIFICANCE & OVERUSED WORDS (§12, §13, §18):
+   - Drop "stands as a testament", "plays a crucial/pivotal role", "rich tapestry", "furthermore", "in conclusion", "delve".
+   - Avoid dodging "is, are, has" by replacing with "serves as", "acts as", "represents".
+5. NO FORCED TRIADS (§6):
+   - Do not group concepts into threes by rule.
+6. 100% LANGUAGE FIDELITY:
+   - Match the source language completely. Never invent English headlines for non-English text.
+7. FACTUAL INTEGRITY:
+   - Keep every technical term, fact, and claim. Do not invent details.
+8. OUTPUT ONLY THE REWRITTEN TEXT without chatter or wrappers.
 
 ${persona}
 ${aggressionRule}
 `;
 }
 
-// Built-in rule-based humanizer
-const REPLACEMENTS: Record<string, string[]> = {
-  "delve into": ["explore", "look into", "examine", "dig into"],
-  "delves into": ["explores", "looks into", "breaks down"],
-  "a testament to": ["proof of", "evidence of", "shows clearly"],
-  "testament to": ["proof of", "evidence of"],
-  "rich tapestry": ["complex mix", "mosaic", "wide blend"],
-  "tapestry of": ["collection of", "variety of", "blend of"],
-  "pivotal role": ["key part", "big difference", "major impact"],
-  "pivotal": ["crucial", "central", "key"],
-  "in the realm of": ["in", "within", "when looking at"],
-  "it is important to remember that": ["remember,", "keep in mind that,", "notably,"],
-  "it is worth noting that": ["notably,", "also,", "interestingly,"],
-  "furthermore,": ["also,", "on top of that,", "plus,"],
-  "moreover,": ["and what's more,", "beside that,", "also,"],
-  "in conclusion,": ["all in all,", "at the end of the day,", "bottom line:"],
-  "plays a crucial role": ["matters a lot", "makes a big impact", "is essential"],
-  "plays a vital role": ["is essential", "matters deeply", "is critical"],
-  "ever-evolving landscape": ["shifting environment", "changing scene", "industry"],
-  "dynamic landscape": ["fast-paced space", "active field", "scene"],
+import { localPrecisionHumanize } from './localEngine';
 
-  "è fondamentale sottolineare che": ["vale la pena notare che", "ricordiamo che", "va detto che"],
-  "svolge un ruolo cruciale": ["conta moltissimo", "è davvero centrale", "fa la differenza"],
-  "svolge un ruolo fondamentale": ["ha un peso enorme", "è decisivo", "fa la differenza"],
-  "in conclusione,": ["in sintesi,", "tirando le somme,", "in breve,"],
-  "inoltre,": ["in più,", "per di più,", "d'altronde,"],
-  "un mosaico di": ["un insieme vario di", "un mix di"],
-  "un testamento a": ["una chiara dimostrazione di", "la prova di"],
-  "nel regno di": ["nell'ambito di", "per quanto riguarda"],
-  "vale la pena notare che": ["notiamo che", "interessante come"],
-  "panorama in continua evoluzione": ["settore che cambia in fretta", "scenario attuale"],
-};
-
-export function heuristicHumanize(text: string, mode: string = 'natural'): string {
-  let result = text;
-  for (const [phrase, alternatives] of Object.entries(REPLACEMENTS)) {
-    const regex = new RegExp(`\\b${phrase}\\b`, 'gi');
-    if (regex.test(result)) {
-      const chosen = alternatives[Math.floor(Math.random() * alternatives.length)];
-      result = result.replace(regex, chosen);
-    }
-  }
-
-  if (mode === 'casual' || mode === 'editorial') {
-    result = result
-      .replace(/\bdo not\b/g, "don't")
-      .replace(/\bcannot\b/g, "can't")
-      .replace(/\bit is\b/g, "it's")
-      .replace(/\bthat is\b/g, "that's")
-      .replace(/\bthere is\b/g, "there's")
-      .replace(/\bwe are\b/g, "we're")
-      .replace(/\bnon è vero che\b/gi, "non crediate che")
-      .replace(/\bpertanto\b/gi, "quindi")
-      .replace(/\bpoiché\b/gi, "dato che");
-  }
-
-  return result;
+export function heuristicHumanize(
+  text: string,
+  mode: HumanizeMode = 'natural',
+  aggression: AggressionLevel = 'medium'
+): string {
+  return localPrecisionHumanize(text, {
+    mode,
+    aggression,
+    seed: Date.now()
+  });
 }
 
 export interface HumanizeRequestPayload {
@@ -158,11 +157,14 @@ export async function processHumanizeRequest(
     customEndpoint,
     mode = 'natural',
     aggression = 'medium',
-    temperature = 0.8,
+    temperature = 0.65,
   } = payload;
 
-  const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression });
-  const userPrompt = `Rewrite and humanize this text following the instructions. Preserve all facts and meaning, but eliminate synthetic AI markers and inject natural burstiness:\n\n${text}`;
+  const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice)(?!\p{L})/giu.test(text);
+  const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression }, isItalian);
+  const userPrompt = isItalian
+    ? `Riscrivi e umanizza questo testo in un italiano naturale, fluido e professionale, preservando tutti i concetti tecnici:\n\n${text}`
+    : `Rewrite and humanize this text into natural, fluent, and engaging human writing, preserving all facts and technical terms:\n\n${text}`;
 
   // 1. Cloudflare Workers AI (Edge GPU Binding or Direct REST API)
   if (provider === 'cf-ai') {
@@ -175,7 +177,8 @@ export async function processHumanizeRequest(
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: Number(temperature) || 0.8,
+          max_tokens: 2048,
+          temperature: Number(temperature) || 0.65,
         });
         const textOut = response.response || response.choices?.[0]?.message?.content || response.text;
         if (textOut) return textOut;
@@ -200,7 +203,8 @@ export async function processHumanizeRequest(
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: Number(temperature) || 0.8,
+          max_tokens: 2048,
+          temperature: Number(temperature) || 0.65,
         })
       });
 
@@ -349,9 +353,9 @@ export async function processHumanizeRequest(
     return data?.message?.content || '';
   }
 
-  // 8. Heuristic (Offline default)
-  if (provider === 'heuristic') {
-    return heuristicHumanize(text, mode);
+  // 8. Precision Local Engine (Offline / zero-model)
+  if (provider === 'heuristic' || provider === 'local') {
+    return heuristicHumanize(text, mode, aggression);
   }
 
   throw new Error(`Unknown provider: ${provider}`);

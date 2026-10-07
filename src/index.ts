@@ -88,8 +88,15 @@ export default {
       const models = {
         hasWorkersAI: !!env.AI,
         providers: {
-          'cf-ai': ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/meta/llama-3.3-70b-instruct', '@cf/meta/llama-3.1-8b-instruct', '@cf/qwen/qwen2.5-7b-instruct', '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'],
-          'heuristic': ['built-in-rules'],
+          'cf-ai': [
+            '@cf/mistralai/mistral-small-3.1-24b-instruct',
+            '@cf/meta/llama-4-scout-17b-16e-instruct',
+            '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+            '@cf/qwen/qwen2.5-coder-32b-instruct',
+            '@cf/qwen/qwen3.8-27b',
+            '@cf/openai/gpt-oss-120b'
+          ],
+          'heuristic': ['precision-nlp-engine', 'built-in-rules'],
           'groq': ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
           'ollama': ['llama3.2', 'mistral', 'qwen2.5'],
           'openrouter': ['meta-llama/llama-3.3-70b-instruct'],

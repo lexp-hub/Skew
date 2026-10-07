@@ -615,7 +615,7 @@ export function renderDashboardHTML(): string {
           <label>SELECT LLM PROVIDER:</label>
           <div class="provider-grid">
             <button class="provider-btn selected" data-prov="cf-ai"><b>CLOUDFLARE AI</b><br><small>Zero Setup / Free Edge GPU</small></button>
-            <button class="provider-btn" data-prov="heuristic"><b>HEURISTIC</b><br><small>100% Offline Rules</small></button>
+            <button class="provider-btn" data-prov="heuristic"><b>LOCAL ENGINE</b><br><small>Zero Models / Precision NLP</small></button>
             <button class="provider-btn" data-prov="groq"><b>GROQ</b><br><small>Llama 3.3 Ultra-fast</small></button>
             <button class="provider-btn" data-prov="ollama"><b>OLLAMA</b><br><small>Local (localhost:11434)</small></button>
             <button class="provider-btn" data-prov="openrouter"><b>OPENROUTER</b><br><small>Open Model Hub</small></button>
@@ -627,7 +627,15 @@ export function renderDashboardHTML(): string {
 
         <div class="form-group">
           <label>MODEL:</label>
-          <input type="text" id="cfgModel" value="@cf/meta/llama-3.3-70b-instruct" placeholder="Model name...">
+          <input type="text" id="cfgModel" list="modelSuggestions" value="@cf/mistralai/mistral-small-3.1-24b-instruct" placeholder="Model name...">
+          <datalist id="modelSuggestions">
+            <option value="@cf/mistralai/mistral-small-3.1-24b-instruct">Mistral Small 3.1 24B (Migliore per Italiano & Prosa fluida)</option>
+            <option value="@cf/meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B (Nuova architettura MoE veloce)</option>
+            <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Llama 3.3 70B Fast (Meta flagship 70B)</option>
+            <option value="@cf/qwen/qwen2.5-coder-32b-instruct">Qwen 2.5 Coder 32B (Testi tecnici & architettura software)</option>
+            <option value="@cf/qwen/qwen3.8-27b">Qwen 3.8 27B (High-performance general purpose)</option>
+            <option value="@cf/openai/gpt-oss-120b">OpenAI GPT-OSS 120B (Modello 120B)</option>
+          </datalist>
         </div>
 
         <div class="form-group" id="cfgKeyGroup" style="display:none;">
@@ -661,7 +669,7 @@ export function renderDashboardHTML(): string {
       aggression: 'medium',
       activeTab: 'text',
       provider: 'cf-ai',
-      model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      model: '@cf/mistralai/mistral-small-3.1-24b-instruct',
       apiKey: '',
       ollamaUrl: 'http://localhost:11434',
       temperature: 0.8,
@@ -927,8 +935,8 @@ export function renderDashboardHTML(): string {
         const p = b.getAttribute('data-prov');
         toggleKeyInput(p);
         const defaults = {
-          'cf-ai': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-          'heuristic': 'built-in-rules',
+          'cf-ai': '@cf/mistralai/mistral-small-3.1-24b-instruct',
+          'heuristic': 'precision-nlp-engine',
           'groq': 'llama-3.3-70b-versatile',
           'ollama': 'llama3.2',
           'openrouter': 'meta-llama/llama-3.3-70b-instruct',

@@ -1,0 +1,16 @@
+name = "skew"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+
+# Cloudflare Workers AI Binding (Run Llama 3.3, Mistral, Qwen, DeepSeek directly on Cloudflare Edge GPUs)
+[ai]
+binding = "AI"
+
+[vars]
+# Optional server-side default keys (Users can also save their keys in the browser)
+OLLAMA_BASE_URL = "http://localhost:11434"
+GROQ_API_KEY = ""
+OPENAI_API_KEY = ""
+OPENROUTER_API_KEY = ""
+ANTHROPIC_API_KEY = ""
+GEMINI_API_KEY = ""

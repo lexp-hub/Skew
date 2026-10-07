@@ -8,6 +8,9 @@ import { analyzeTextMetrics } from './metrics';
 
 export interface Env {
   AI?: any; // Cloudflare Workers AI binding
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_MODEL?: string;
   OLLAMA_BASE_URL?: string;
   GROQ_API_KEY?: string;
   OPENAI_API_KEY?: string;
@@ -85,7 +88,7 @@ export default {
       const models = {
         hasWorkersAI: !!env.AI,
         providers: {
-          'cf-ai': ['@cf/meta/llama-3.3-70b-instruct', '@cf/meta/llama-3.1-8b-instruct', '@cf/qwen/qwen2.5-7b-instruct', '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'],
+          'cf-ai': ['@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/meta/llama-3.3-70b-instruct', '@cf/meta/llama-3.1-8b-instruct', '@cf/qwen/qwen2.5-7b-instruct', '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'],
           'heuristic': ['built-in-rules'],
           'groq': ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
           'ollama': ['llama3.2', 'mistral', 'qwen2.5'],

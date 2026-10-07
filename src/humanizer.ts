@@ -164,20 +164,55 @@ export async function processHumanizeRequest(
   const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression });
   const userPrompt = `Rewrite and humanize this text following the instructions. Preserve all facts and meaning, but eliminate synthetic AI markers and inject natural burstiness:\n\n${text}`;
 
-  // 1. Cloudflare Workers AI (Edge GPU)
+  // 1. Cloudflare Workers AI (Edge GPU Binding or Direct REST API)
   if (provider === 'cf-ai') {
-    if (!env.AI) {
-      throw new Error('Cloudflare Workers AI binding [env.AI] is not configured. Use heuristic or set an API key.');
+    const chosenModel = model || env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
+    if (env.AI) {
+      try {
+        const response = await env.AI.run(chosenModel, {
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: Number(temperature) || 0.8,
+        });
+        const textOut = response.response || response.choices?.[0]?.message?.content || response.text;
+        if (textOut) return textOut;
+      } catch (err: any) {
+        // Fallback to REST API if AI binding is unavailable in local dev
+        if (!env.CLOUDFLARE_ACCOUNT_ID && !env.CLOUDFLARE_API_TOKEN && !apiKey) throw err;
+      }
     }
-    const chosenModel = model || '@cf/meta/llama-3.3-70b-instruct';
-    const response = await env.AI.run(chosenModel, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: Number(temperature) || 0.8,
-    });
-    return response.response || response.text || '';
+
+    const accountId = env.CLOUDFLARE_ACCOUNT_ID;
+    const token = apiKey || env.CLOUDFLARE_API_TOKEN;
+
+    if (accountId && token) {
+      const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${chosenModel}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: Number(temperature) || 0.8,
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Cloudflare Workers AI error: ${await res.text()}`);
+      }
+
+      const data: any = await res.json();
+      return data.result?.response || data.result?.choices?.[0]?.message?.content || data.result?.text || '';
+    }
+
+    throw new Error('Cloudflare Workers AI binding [env.AI] or CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN is not configured.');
   }
 
   // 2. Groq

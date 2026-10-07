@@ -453,7 +453,6 @@ export function renderDashboardHTML(): string {
   <header>
     <div class="brand">
       <span class="brand-badge">SKEW</span>
-      <span class="brand-sub">// CLOUDFLARE WORKER EDITION</span>
       <button class="provider-pill" id="pillConfig">
         <span class="provider-dot"></span>
         <span id="pillProviderLabel">CF-AI (LLAMA 3.3 70B)</span>
@@ -662,7 +661,7 @@ export function renderDashboardHTML(): string {
       aggression: 'medium',
       activeTab: 'text',
       provider: 'cf-ai',
-      model: '@cf/meta/llama-3.3-70b-instruct',
+      model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       apiKey: '',
       ollamaUrl: 'http://localhost:11434',
       temperature: 0.8,
@@ -928,7 +927,7 @@ export function renderDashboardHTML(): string {
         const p = b.getAttribute('data-prov');
         toggleKeyInput(p);
         const defaults = {
-          'cf-ai': '@cf/meta/llama-3.3-70b-instruct',
+          'cf-ai': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
           'heuristic': 'built-in-rules',
           'groq': 'llama-3.3-70b-versatile',
           'ollama': 'llama3.2',

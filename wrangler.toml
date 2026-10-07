@@ -7,6 +7,8 @@ compatibility_date = "2024-10-01"
 binding = "AI"
 
 [vars]
+CLOUDFLARE_ACCOUNT_ID = "5409693716803be3df6614f05165ccdb"
+CLOUDFLARE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 # Optional server-side default keys (Users can also save their keys in the browser)
 OLLAMA_BASE_URL = "http://localhost:11434"
 GROQ_API_KEY = ""

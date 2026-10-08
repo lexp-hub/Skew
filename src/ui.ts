@@ -323,6 +323,49 @@ export function renderDashboardHTML(): string {
       transition: width 0.3s;
     }
 
+    /* AI Detector View */
+    .detector-container {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      font-size: 12px;
+      flex: 1;
+    }
+    .detector-scorecard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .verdict-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border: 1px solid currentColor;
+      margin-top: 6px;
+    }
+    .heat-text {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 14px;
+      line-height: 1.8;
+      font-size: 13px;
+    }
+    .heat-sent {
+      padding: 2px 4px;
+      border-radius: 2px;
+      margin: 0 1px;
+      transition: background 0.2s;
+      cursor: help;
+    }
+    .heat-sent.ai { background: rgba(239, 68, 68, 0.25); border-bottom: 2px solid #ef4444; }
+    .heat-sent.mixed { background: rgba(234, 179, 8, 0.22); border-bottom: 2px solid #eab308; }
+    .heat-sent.human { background: rgba(16, 185, 129, 0.20); border-bottom: 2px solid #10b981; }
+
+
     /* Action Bar */
     .action-bar {
       background: var(--surface);
@@ -525,6 +568,7 @@ export function renderDashboardHTML(): string {
             <button class="tab-btn active" data-tab="text">01. HUMANIZED</button>
             <button class="tab-btn" data-tab="diff">02. DIFF INSPECTOR</button>
             <button class="tab-btn" data-tab="metrics">03. METRICS AUDIT</button>
+            <button class="tab-btn" data-tab="detector">04. AI DETECTOR</button>
           </div>
           <div class="panel-tools">
             <button class="tag-sm" id="btnCopy">COPY</button>
@@ -579,6 +623,32 @@ export function renderDashboardHTML(): string {
               <div id="auditClichesList" style="color:var(--muted); font-size:11px;">No clichés detected.</div>
             </div>
           </div>
+
+          <!-- AI Detector View -->
+          <div id="detectorView" class="detector-container" style="display:none;">
+            <div class="detector-scorecard">
+              <div class="metric-box" style="border-left: 3px solid var(--accent);">
+                <div style="color:var(--muted); font-size:10px;">HUMAN PROBABILITY</div>
+                <div class="metric-val" id="detHumanScore" style="color:var(--accent);">--%</div>
+                <div id="detVerdictBadge" class="verdict-badge" style="color:var(--accent);">AWAITING SCAN</div>
+              </div>
+              <div class="metric-box" style="border-left: 3px solid #ef4444;">
+                <div style="color:var(--muted); font-size:10px;">AI GENERATED PROBABILITY</div>
+                <div class="metric-val" id="detAiScore" style="color:#ef4444;">--%</div>
+                <div style="color:var(--muted); font-size:10px; margin-top:6px;">BURSTINESS: <span id="detBurst">--%</span> | TTR: <span id="detTtr">--%</span></div>
+              </div>
+            </div>
+
+            <div class="metric-box">
+              <b style="display:block; margin-bottom:6px;">SENTENCE-BY-SENTENCE HEATMAP AUDIT:</b>
+              <div style="color:var(--muted); font-size:10px; margin-bottom:10px;">
+                <span style="color:#10b981;">■ Green: Likely Human</span> &nbsp;|&nbsp;
+                <span style="color:#eab308;">■ Yellow: Uncertain / Mixed</span> &nbsp;|&nbsp;
+                <span style="color:#ef4444;">■ Red: High AI Signature</span>
+              </div>
+              <div id="detHeatmapContainer" class="heat-text">Click "VERIFY HUMANITY" below or run the humanizer to view sentence analysis.</div>
+            </div>
+          </div>
         </div>
 
         <div class="panel-footer">
@@ -600,6 +670,7 @@ export function renderDashboardHTML(): string {
       </div>
       <div style="display:flex; gap:8px;">
         <button class="tag-sm" id="btnRepass" style="display:none; padding:8px 14px;">↺ RE-PASS</button>
+        <button class="tag-sm" id="btnVerifyScan" style="padding:8px 14px; background:#1e293b; color:#38bdf8; border:1px solid #0284c7;">🔍 VERIFY HUMANITY</button>
         <button class="btn-humanize" id="btnRun">
           <span>HUMANIZE TEXT</span> ↵
         </button>
@@ -785,11 +856,79 @@ export function renderDashboardHTML(): string {
         outputText.style.display = tab === 'text' ? 'block' : 'none';
         diffView.style.display = tab === 'diff' ? 'block' : 'none';
         metricsView.style.display = tab === 'metrics' ? 'flex' : 'none';
+        detectorView.style.display = tab === 'detector' ? 'flex' : 'none';
 
         if (tab === 'diff') {
           diffView.innerHTML = computeWordDiff(inputText.value, outputText.value);
         }
+        if (tab === 'detector') {
+          runDetectorScan();
+        }
       });
+    });
+
+    // AI Detector Runner
+    async function runDetectorScan() {
+      const textToScan = outputText.value.trim() || inputText.value.trim();
+      if (!textToScan) return;
+
+      const btn = document.getElementById('btnVerifyScan');
+      btn.innerText = 'SCANNING...';
+
+      try {
+        const res = await fetch('/api/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textToScan })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Scan error');
+
+        const det = data.detection;
+        document.getElementById('detHumanScore').innerText = det.humanScore + '%';
+        document.getElementById('detAiScore').innerText = det.aiScore + '%';
+        document.getElementById('detBurst').innerText = det.burstinessScore + '%';
+        document.getElementById('detTtr').innerText = det.lexicalDiversity + '%';
+
+        const badge = document.getElementById('detVerdictBadge');
+        badge.innerText = det.verdict;
+        if (det.humanScore >= 70) {
+          badge.style.color = 'var(--accent)';
+          badge.style.borderColor = 'var(--accent)';
+        } else if (det.humanScore >= 40) {
+          badge.style.color = '#eab308';
+          badge.style.borderColor = '#eab308';
+        } else {
+          badge.style.color = '#ef4444';
+          badge.style.borderColor = '#ef4444';
+        }
+
+        // Render heatmap
+        const heatContainer = document.getElementById('detHeatmapContainer');
+        if (det.sentences && det.sentences.length > 0) {
+          heatContainer.innerHTML = det.sentences.map((s) => {
+            const reasonsText = s.reasons.length > 0 ? ' [ ' + s.reasons.join(', ') + ' ]' : '';
+            return '<span class="heat-sent ' + s.classification + '" title="AI Prob: ' + s.aiProbability + '%' + reasonsText + '">' + s.text + '</span> ';
+          }).join('');
+        } else {
+          heatContainer.innerText = 'No sentences detected.';
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        btn.innerText = '🔍 VERIFY HUMANITY';
+      }
+    }
+
+    document.getElementById('btnVerifyScan').addEventListener('click', () => {
+      // Switch to detector tab and run scan
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === 'detector'));
+      state.activeTab = 'detector';
+      outputText.style.display = 'none';
+      diffView.style.display = 'none';
+      metricsView.style.display = 'none';
+      detectorView.style.display = 'flex';
+      runDetectorScan();
     });
 
     // Sample buttons

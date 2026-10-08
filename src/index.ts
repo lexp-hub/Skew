@@ -5,6 +5,7 @@
 import { renderDashboardHTML } from './ui';
 import { processHumanizeRequest } from './humanizer';
 import { analyzeTextMetrics } from './metrics';
+import { detectHumanity } from './detector';
 
 export interface Env {
   AI?: any; // Cloudflare Workers AI binding
@@ -78,6 +79,35 @@ export default {
       } catch (err: any) {
         return new Response(
           JSON.stringify({ error: err.message || 'Processing error' }),
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
+    // 2.5 AI Detection API Endpoint
+    if (url.pathname === '/api/detect' && request.method === 'POST') {
+      try {
+        const body = await request.json() as any;
+        const text = (body.text || '').trim();
+
+        if (!text) {
+          return new Response(
+            JSON.stringify({ error: 'Text cannot be empty' }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        const detection = detectHumanity(text);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            detection
+          }),
+          { headers: corsHeaders }
+        );
+      } catch (err: any) {
+        return new Response(
+          JSON.stringify({ error: err.message || 'Detection error' }),
           { status: 500, headers: corsHeaders }
         );
       }

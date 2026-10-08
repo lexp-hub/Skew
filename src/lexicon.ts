@@ -715,3 +715,4 @@ CONTRASTIVE TRANSFORMATION DICTIONARY (AI BOT CLICHÉ -> NATURAL HUMAN ALTERNATI
 - "seamlessly" -> "smoothly" / "cleanly" / "without friction"
 `;
 }
+

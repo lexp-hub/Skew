@@ -14,8 +14,6 @@
 
 ---
 
-## What is Skew?
-
 **Skew** is a lightweight, edge-native text humanizer and AI detector built on Cloudflare Workers. It strips synthetic chatbot markers, generic SaaS brochure clichés, and rigid transitional formulas, rewriting text with authentic human cadence.
 
 - **Edge GPU Powered**: Uses `@cf/mistralai/mistral-small-3.1-24b-instruct` on Cloudflare Workers AI by default.
@@ -23,58 +21,7 @@
 - **Wikipedia Editorial Standards**: Enforces the 26 structural rules from Wikipedia's *"Signs of AI writing"* (no shallow *-ing* riders, no *"Not X but Y"*, no inflated verbs).
 - **Built-in AI Detector**: Real-time sentence-by-sentence heatmap audit measuring burstiness, lexical diversity, and cliché density.
 
-For in-depth architecture, regex models, and pipeline specifications, see [DOCUMENTATION.md](DOCUMENTATION.md).
-
----
-
-## Quickstart
-
-### 1. Environment Setup
-
-Configure your Cloudflare credentials in `.dev.vars` (for local development) or via `wrangler secret`:
-
-```env
-CLOUDFLARE_ACCOUNT_ID=5409693716803be3df6614f05165ccdb
-CLOUDFLARE_API_TOKEN=your_workers_ai_token
-CLOUDFLARE_MODEL=@cf/mistralai/mistral-small-3.1-24b-instruct
-```
-
-### 2. Run & Deploy
-
-```bash
-# Install dependencies
-npm install
-
-# Start local edge worker
-npm run dev
-
-# Deploy to Cloudflare Workers
-npm run deploy
-```
-
----
-
-## API
-
-### Humanize: `POST /api/humanize`
-
-```json
-{
-  "text": "L'ingegneria del software moderna affronta costantemente il problema della complessità architetturale...",
-  "provider": "cf-ai",
-  "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
-  "mode": "natural",
-  "aggression": "medium"
-}
-```
-
-### Detect: `POST /api/detect`
-
-```json
-{
-  "text": "Un modulo costruito per fondersi perfettamente nel flusso di lavoro quotidiano..."
-}
-```
+For architecture details, regex models, and full API documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ---
 

@@ -851,7 +851,31 @@ CONTRASTIVE TRANSFORMATION DICTIONARY (AI BOT CLICHÉ -> NATURAL HUMAN ALTERNATI
 - "in conclusion" -> "in short," / "ultimately," / "the bottom line is"
 - "transformative journey" -> "major evolution" / "deep shift"
 - "laying the groundwork for" -> "setting up" / "paving the way for"
-- "seamlessly" -> "smoothly" / "cleanly" / "without friction"
 `;
+}
+
+/**
+ * Checks if a word or short phrase has a registered alternative in the lexicon database.
+ * Returns the natural alternative if found, or null if the word has no AI cliché replacement.
+ */
+export function findLexiconAlternative(text: string, isItalian: boolean, mode: string = 'natural'): string | null {
+  const clean = text.trim();
+  if (!clean) return null;
+
+  const entries = isItalian ? ITALIAN_AI_LEXICON : ENGLISH_AI_LEXICON;
+  for (const entry of entries) {
+    if (entry.pattern.test(clean)) {
+      const candidates = (entry.alternatives as any)[mode] || entry.alternatives.natural;
+      if (candidates && candidates.length > 0) {
+        for (const cand of candidates) {
+          const trimmed = cand.trim().replace(/[,;:]+$/, '');
+          if (trimmed.length > 0) {
+            return trimmed;
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
 

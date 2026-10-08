@@ -4,7 +4,7 @@
  */
 
 import { localPrecisionHumanize } from './localEngine';
-import { getPromptContrastiveExamples, ITALIAN_AI_LEXICON, ENGLISH_AI_LEXICON } from './lexicon';
+import { getPromptContrastiveExamples, ITALIAN_AI_LEXICON, ENGLISH_AI_LEXICON, findLexiconAlternative } from './lexicon';
 
 export type HumanizeMode = 'natural' | 'casual' | 'academic' | 'editorial' | 'executive';
 export type AggressionLevel = 'light' | 'medium' | 'aggressive';
@@ -94,6 +94,9 @@ REGOLE TASSATIVE DI SCRITTURA UMANA:
    - VIETATO iniziare con "Ecco il testo:", "Certamente,", "Ecco la riscrittura:" o formule simili.
    - VIETATO inserire note finali, elenchi di spiegazioni o resoconti sulle modifiche apportate.
    - RESTITUISCI ESCLUSIVAMENTE IL TESTO FINALE RISCRITTO.
+8. MAI INVENTARE DEFINIZIONI ENCICLOPEDICHE O SPIEGAZIONI (REGOLA PAROLE ISOLATE):
+   - Se l'utente inserisce una singola parola, un frammento breve o un termine comune che NON è un cliché (es. "calcio", "pizza", "computer", "roma"), NON spiegare che cos'è (MAI produrre "Il calcio è uno sport...", "La pizza è un piatto...").
+   - Se il termine o frammento non contiene formule stereotipate da IA, restituiscilo TAL QUALE senza inventare una voce di Wikipedia. Modificalo SOLO se è un cliché registrato (es. "inoltre" -> "in più", "fondamentale" -> "determinante").
 
 ${contrastiveGuide}
 
@@ -121,6 +124,9 @@ STRICT EDITORIAL DIRECTIVES:
 6. NO CHATTER OR COMMENTARY:
    - NEVER start with "Here is the rewritten text:", "Sure!", or provide post-rewrite bullet points explaining your edits.
    - OUTPUT ONLY THE FINAL REWRITTEN TEXT.
+7. NO ENCYCLOPEDIC DEFINITIONS FOR ISOLATED WORDS:
+   - If the user provides a single word or short phrase that is not an AI cliché (e.g. "soccer", "pizza", "computer"), DO NOT generate an encyclopedia definition ("Soccer is a team sport...").
+   - If there is no AI cliché to rewrite, return the term AS IS. Only rewrite if the word matches a known AI marker (e.g. "furthermore" -> "also", "delve" -> "explore").
 
 ${contrastiveGuide}
 
@@ -135,7 +141,14 @@ ${aggressionRule}
  * 2. Removes trailing explanation bullet points or post-analysis notes
  * 3. Deterministically replaces stubborn surviving AI clichés using the lexicon database
  */
-export function sanitizeAndHarmonizeOutput(rawText: string, isItalian: boolean): string {
+/**
+ * Sanitizes and cleans the raw LLM output:
+ * 1. Strips conversational chatter, greetings, and preambles ("Ecco il testo:", "Sure, here is...")
+ * 2. Removes trailing explanation bullet points or post-analysis notes
+ * 3. Deterministically replaces stubborn surviving AI clichés using the lexicon database
+ * 4. Filters out hallucinated encyclopedia definitions if original input was a short phrase/word
+ */
+export function sanitizeAndHarmonizeOutput(rawText: string, isItalian: boolean, originalText: string = ''): string {
   if (!rawText) return '';
 
   let cleaned = rawText.trim();
@@ -149,11 +162,29 @@ export function sanitizeAndHarmonizeOutput(rawText: string, isItalian: boolean):
   cleaned = cleaned.replace(/^(?:Ecco il testo(?: revisionato| umanizzato| modificato)?:?|Certamente,? ecco(?: la riscrittura| il testo)?:?|Di seguito il testo(?: revisionato)?:?)\s*\n*/i, '');
   cleaned = cleaned.replace(/^(?:Here is the (?:rewritten|humanized|edited) text:?|Sure,? here is the (?:rewrite|text)?:?|Below is the (?:revised|edited) text:?)\s*\n*/i, '');
 
-  // 2. Strip trailing explanatory sections (e.g. "Ho apportato le seguenti modifiche: ...", "Key changes made: ...")
+  // 2. Filter out hallucinated encyclopedia definitions (e.g. input "calcio" -> output "Il calcio è uno sport...")
+  if (originalText) {
+    const origWords = originalText.trim().split(/\s+/).filter(Boolean);
+    const outWords = cleaned.split(/\s+/).filter(Boolean);
+
+    // If original input is short (<= 6 words) and output exploded into a long explanation (> 18 words)
+    // and begins with a definition pattern ("Il X è un...", "X is a..."), filter it
+    if (origWords.length <= 6 && outWords.length > 18) {
+      const defPattern = isItalian
+        ? /^(?:[IilL'’dD]+(?:\s+\w+)?\s+è\s+(?:un|uno|una|lo|il|la|uno sport|un piatto|un concetto|un termine|un dispositivo|un sistema|definito come)\b)/i
+        : /^(?:(?:The\s+)?\w+\s+is\s+(?:a|an|the|defined as|a sport|a concept|a tool)\b)/i;
+
+      if (defPattern.test(cleaned)) {
+        return originalText.trim();
+      }
+    }
+  }
+
+  // 3. Strip trailing explanatory sections (e.g. "Ho apportato le seguenti modifiche: ...", "Key changes made: ...")
   const trailingSplitRegex = /\n\s*(?:(?:Ho apportato le seguenti modifiche|Modifiche principali|Note di revisione|Key changes made|Here is what I changed|Changes applied):?[\s\S]*)$/i;
   cleaned = cleaned.replace(trailingSplitRegex, '').trim();
 
-  // 3. Deterministic cleanup of stubborn surviving cliches from the lexicon
+  // 4. Deterministic cleanup of stubborn surviving cliches from the lexicon
   if (isItalian) {
     for (const item of ITALIAN_AI_LEXICON) {
       if (item.pattern.test(cleaned)) {
@@ -216,7 +247,24 @@ export async function processHumanizeRequest(
     temperature = 0.65,
   } = payload;
 
-  const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice)(?!\p{L})/giu.test(text);
+  const cleanInput = (text || '').trim();
+  const inputWords = cleanInput.split(/\s+/).filter(Boolean);
+
+  const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice|inoltre|calcio|tuttavia|fondamentale|cruciale)(?!\p{L})/giu.test(text);
+
+  // If input is a short fragment (up to 6 words), check if it matches a known AI cliché in the lexicon
+  if (inputWords.length <= 6) {
+    const directAlt = findLexiconAlternative(cleanInput, isItalian, mode) || findLexiconAlternative(cleanInput, !isItalian, mode);
+    if (directAlt) {
+      return directAlt;
+    }
+    // If it's a short entity or isolated words (1-3 words) without an AI cliché pattern, return it as is
+    // Prevents the model from generating dictionary/encyclopedia definitions for simple terms (e.g. "calcio", "pizza", "computer")
+    if (inputWords.length <= 3) {
+      return cleanInput;
+    }
+  }
+
   const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression }, isItalian);
   const userPrompt = isItalian
     ? `Riscrivi e umanizza questo testo in un italiano naturale, fluido e professionale, preservando tutti i concetti tecnici:\n\n${text}`
@@ -406,5 +454,5 @@ export async function processHumanizeRequest(
   }
 
   // Pass through the deterministic sanitization & harmonization pipeline
-  return sanitizeAndHarmonizeOutput(rawOutput, isItalian);
+  return sanitizeAndHarmonizeOutput(rawOutput, isItalian, cleanInput);
 }

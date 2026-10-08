@@ -502,7 +502,7 @@ export function renderDashboardHTML(): string {
       <span class="brand-badge">SKEW</span>
       <button class="provider-pill" id="pillConfig">
         <span class="provider-dot"></span>
-        <span id="pillProviderLabel">CF-AI (LLAMA 3.3 70B)</span>
+        <span id="pillProviderLabel">CF-AI (MISTRAL SMALL 3.1)</span>
       </button>
     </div>
 

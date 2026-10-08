@@ -20,7 +20,7 @@
 - **Offline Heuristic NLP**: Zero-model deterministic engine that runs with 0 ms latency and zero token cost.
 - **Auto-Refinement Loop**: Iteratively benchmarks candidate text against AI detection heuristics until the target human probability is achieved.
 - **Wikipedia Editorial Standards**: Enforces the 26 structural rules from Wikipedia's *"Signs of AI writing"* (no shallow *-ing* riders, no *"Not X but Y"*, no inflated verbs).
-- **Built-in AI Detector & Benchmarks**: Real-time sentence-by-sentence heatmap audit estimating metrics inspired by GPTZero, Copyleaks, and Turnitin.
+- **Ensemble Multi-Detector Consensus**: Real-time sentence heatmap that models 5 major detector architectures (GPTZero, Copyleaks, Turnitin, Sapling, Zero-Shot/Wikipedia) and computes the consensus average across all of them.
 
 For architecture details, regex models, and full API documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
 

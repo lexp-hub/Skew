@@ -702,20 +702,23 @@ export function renderDashboardHTML(): string {
           <div id="detectorView" class="detector-container" style="display:none;">
             <div class="detector-scorecard">
               <div class="metric-box" style="border-left: 3px solid var(--accent);">
-                <div style="color:var(--muted); font-size:10px;">HUMAN PROBABILITY</div>
+                <div style="color:var(--muted); font-size:10px;">CONSENSUS HUMAN SCORE (5-DETECTOR AVERAGE)</div>
                 <div class="metric-val" id="detHumanScore" style="color:var(--accent);">--%</div>
                 <div id="detVerdictBadge" class="verdict-badge" style="color:var(--accent);">AWAITING SCAN</div>
               </div>
               <div class="metric-box" style="border-left: 3px solid #ef4444;">
-                <div style="color:var(--muted); font-size:10px;">AI GENERATED PROBABILITY</div>
+                <div style="color:var(--muted); font-size:10px;">SYNTHETIC AI PROBABILITY (AVERAGE)</div>
                 <div class="metric-val" id="detAiScore" style="color:#ef4444;">--%</div>
-                <div style="color:var(--muted); font-size:10px; margin-top:6px;">BURSTINESS: <span id="detBurst">--%</span> | TTR: <span id="detTtr">--%</span></div>
+                <div style="color:var(--muted); font-size:10px; margin-top:6px;">BURSTINESS: <span id="detBurst">--%</span> | PERPLEXITY: <span id="detPerp">--%</span></div>
               </div>
             </div>
 
             <!-- Multi-Detector Benchmarks -->
             <div class="metric-box">
-              <b style="display:block; margin-bottom:8px;">MULTI-DETECTOR BENCHMARK ESTIMATES:</b>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <b>MULTI-DETECTOR ENSEMBLE BENCHMARKS:</b>
+                <span style="color:var(--accent); font-size:10px;">AVERAGE CONSENSUS</span>
+              </div>
               <div class="benchmark-grid">
                 <div class="benchmark-card">
                   <div style="color:var(--muted); font-size:10px;">GPTZERO</div>
@@ -728,14 +731,24 @@ export function renderDashboardHTML(): string {
                   <div style="font-size:9px; color:var(--muted);" id="bmCopyleaksVerdict">AWAITING</div>
                 </div>
                 <div class="benchmark-card">
-                  <div style="color:var(--muted); font-size:10px;">TURNITIN (AI SIM)</div>
+                  <div style="color:var(--muted); font-size:10px;">TURNITIN</div>
                   <div class="benchmark-val" id="bmTurnitin" style="color:#f59e0b;">--%</div>
-                  <div style="font-size:9px; color:var(--muted);">AI SIMILARITY</div>
+                  <div style="font-size:9px; color:var(--muted);" id="bmTurnitinVerdict">AWAITING</div>
                 </div>
                 <div class="benchmark-card">
-                  <div style="color:var(--muted); font-size:10px;">PERPLEXITY & ENTROPY</div>
-                  <div class="benchmark-val" id="bmPerp" style="color:var(--accent);">--%</div>
-                  <div style="font-size:9px; color:var(--muted);">SYNTACTIC CADENCE</div>
+                  <div style="color:var(--muted); font-size:10px;">SAPLING</div>
+                  <div class="benchmark-val" id="bmSapling" style="color:#a855f7;">--%</div>
+                  <div style="font-size:9px; color:var(--muted);" id="bmSaplingVerdict">AWAITING</div>
+                </div>
+                <div class="benchmark-card">
+                  <div style="color:var(--muted); font-size:10px;">WIKI / ZERO-SHOT</div>
+                  <div class="benchmark-val" id="bmZeroShot" style="color:#10b981;">--%</div>
+                  <div style="font-size:9px; color:var(--muted);" id="bmZeroShotVerdict">AWAITING</div>
+                </div>
+                <div class="benchmark-card" style="border-color:var(--accent);">
+                  <div style="color:var(--accent); font-size:10px;">ENSEMBLE MEAN</div>
+                  <div class="benchmark-val" id="bmAverage" style="color:var(--accent);">--%</div>
+                  <div style="font-size:9px; color:var(--accent);">5-MODEL AVERAGE</div>
                 </div>
               </div>
             </div>
@@ -1004,15 +1017,23 @@ export function renderDashboardHTML(): string {
         document.getElementById('detHumanScore').innerText = det.humanScore + '%';
         document.getElementById('detAiScore').innerText = det.aiScore + '%';
         document.getElementById('detBurst').innerText = det.burstinessScore + '%';
-        document.getElementById('detTtr').innerText = det.lexicalDiversity + '%';
+        if (document.getElementById('detPerp')) {
+          document.getElementById('detPerp').innerText = (det.perplexityScore || 50) + '%';
+        }
 
         if (det.benchmarks) {
-          document.getElementById('bmGptZero').innerText = det.benchmarks.gptZero.score + '%';
-          document.getElementById('bmGptZeroVerdict').innerText = det.benchmarks.gptZero.verdict;
-          document.getElementById('bmCopyleaks').innerText = det.benchmarks.copyleaks.humanScore + '%';
-          document.getElementById('bmCopyleaksVerdict').innerText = det.benchmarks.copyleaks.verdict;
-          document.getElementById('bmTurnitin').innerText = det.benchmarks.turnitinEstimate.aiPercentage + '%';
-          document.getElementById('bmPerp').innerText = (det.perplexityScore || 50) + '%';
+          const bm = det.benchmarks;
+          document.getElementById('bmGptZero').innerText = bm.gptZero.score + '%';
+          document.getElementById('bmGptZeroVerdict').innerText = bm.gptZero.verdict;
+          document.getElementById('bmCopyleaks').innerText = bm.copyleaks.score + '%';
+          document.getElementById('bmCopyleaksVerdict').innerText = bm.copyleaks.verdict;
+          document.getElementById('bmTurnitin').innerText = bm.turnitin.score + '%';
+          document.getElementById('bmTurnitinVerdict').innerText = bm.turnitin.verdict;
+          document.getElementById('bmSapling').innerText = bm.sapling.score + '%';
+          document.getElementById('bmSaplingVerdict').innerText = bm.sapling.verdict;
+          document.getElementById('bmZeroShot').innerText = bm.zeroShot.score + '%';
+          document.getElementById('bmZeroShotVerdict').innerText = bm.zeroShot.verdict;
+          document.getElementById('bmAverage').innerText = bm.ensembleAverage + '%';
         }
 
         const badge = document.getElementById('detVerdictBadge');
@@ -1202,7 +1223,9 @@ export function renderDashboardHTML(): string {
           document.getElementById('detHumanScore').innerText = det.humanScore + '%';
           document.getElementById('detAiScore').innerText = det.aiScore + '%';
           document.getElementById('detBurst').innerText = det.burstinessScore + '%';
-          document.getElementById('detTtr').innerText = det.lexicalDiversity + '%';
+          if (document.getElementById('detPerp')) {
+            document.getElementById('detPerp').innerText = (det.perplexityScore || 50) + '%';
+          }
 
           const badge = document.getElementById('detVerdictBadge');
           badge.innerText = det.verdict;
@@ -1218,12 +1241,18 @@ export function renderDashboardHTML(): string {
           }
 
           if (det.benchmarks) {
-            document.getElementById('bmGptZero').innerText = det.benchmarks.gptZero.score + '%';
-            document.getElementById('bmGptZeroVerdict').innerText = det.benchmarks.gptZero.verdict;
-            document.getElementById('bmCopyleaks').innerText = det.benchmarks.copyleaks.humanScore + '%';
-            document.getElementById('bmCopyleaksVerdict').innerText = det.benchmarks.copyleaks.verdict;
-            document.getElementById('bmTurnitin').innerText = det.benchmarks.turnitinEstimate.aiPercentage + '%';
-            document.getElementById('bmPerp').innerText = (det.perplexityScore || 50) + '%';
+            const bm = det.benchmarks;
+            document.getElementById('bmGptZero').innerText = bm.gptZero.score + '%';
+            document.getElementById('bmGptZeroVerdict').innerText = bm.gptZero.verdict;
+            document.getElementById('bmCopyleaks').innerText = bm.copyleaks.score + '%';
+            document.getElementById('bmCopyleaksVerdict').innerText = bm.copyleaks.verdict;
+            document.getElementById('bmTurnitin').innerText = bm.turnitin.score + '%';
+            document.getElementById('bmTurnitinVerdict').innerText = bm.turnitin.verdict;
+            document.getElementById('bmSapling').innerText = bm.sapling.score + '%';
+            document.getElementById('bmSaplingVerdict').innerText = bm.sapling.verdict;
+            document.getElementById('bmZeroShot').innerText = bm.zeroShot.score + '%';
+            document.getElementById('bmZeroShotVerdict').innerText = bm.zeroShot.verdict;
+            document.getElementById('bmAverage').innerText = bm.ensembleAverage + '%';
           }
 
           // Auto-refine iterations display

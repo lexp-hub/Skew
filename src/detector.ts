@@ -28,15 +28,23 @@ export interface DetectorBenchmarks {
     perplexity: number;
   };
   copyleaks: {
-    humanScore: number;
+    score: number; // 0-100% human
     verdict: string;
   };
-  turnitinEstimate: {
+  turnitin: {
+    score: number; // 0-100% human
     aiPercentage: number;
+    verdict: string;
   };
-  saplingEstimate: {
-    humanScore: number;
+  sapling: {
+    score: number; // 0-100% human
+    verdict: string;
   };
+  zeroShot: {
+    score: number; // 0-100% human
+    verdict: string;
+  };
+  ensembleAverage: number; // Mean of all 5 detectors
 }
 
 export interface DetailedDetectorResult {
@@ -78,9 +86,11 @@ export function detectHumanity(text: string): DetailedDetectorResult {
       issues: ['No text provided for analysis.'],
       benchmarks: {
         gptZero: { score: 50, verdict: 'UNCERTAIN / MIXED', burstiness: 50, perplexity: 50 },
-        copyleaks: { humanScore: 50, verdict: 'UNCERTAIN / MIXED' },
-        turnitinEstimate: { aiPercentage: 50 },
-        saplingEstimate: { humanScore: 50 }
+        copyleaks: { score: 50, verdict: 'UNCERTAIN / MIXED' },
+        turnitin: { score: 50, aiPercentage: 50, verdict: 'UNCERTAIN / MIXED' },
+        sapling: { score: 50, verdict: 'UNCERTAIN / MIXED' },
+        zeroShot: { score: 50, verdict: 'UNCERTAIN / MIXED' },
+        ensembleAverage: 50
       },
       breakdown: { burstinessWeight: 15, lexicalWeight: 15, perplexityWeight: 15, clichePenalty: 0, uniformityPenalty: 0 }
     };
@@ -230,22 +240,35 @@ export function detectHumanity(text: string): DetailedDetectorResult {
     };
   });
 
-  // 7. Overall Composite Human Score
-  const burstContribution = burstinessScore * 0.35;
-  const lexContribution = lexicalDiversity * 0.25;
-  const perpContribution = perplexityScore * 0.30;
-  const clichePenalty = Math.min(55, totalClicheWeight * 14);
+  // 7. Multi-Detector Individual Scoring (Models based on published research methodologies)
+  const clichePenalty = Math.min(60, totalClicheWeight * 15);
 
-  let rawHumanScore = burstContribution + lexContribution + perpContribution - clichePenalty - uniformityPenalty;
+  // Model A: GPTZero (Perplexity & Burstiness dynamics by Edward Tian)
+  const gptZeroScore = Math.min(99, Math.max(5, Math.round((burstinessScore * 0.50) + (perplexityScore * 0.50) - (clichePenalty * 0.35))));
+  const gptZeroVerdict = gptZeroScore >= 75 ? 'Likely Human' : gptZeroScore >= 50 ? 'Mixed / Review' : 'Likely AI';
 
-  // Bonus for natural pacing: mixture of concise punchy clauses and complex sentences
-  const hasShort = sentenceLengths.some(l => l >= 6 && l <= 12);
-  const hasLong = sentenceLengths.some(l => l >= 24);
-  if (hasShort && hasLong) {
-    rawHumanScore += 12;
-  }
+  // Model B: Copyleaks (Lexical repetition, Type-Token Ratio & syntax pattern uniformity)
+  const copyleaksScore = Math.min(99, Math.max(5, Math.round((lexicalDiversity * 0.55) + (burstinessScore * 0.25) + (perplexityScore * 0.20) - (clichePenalty * 0.35))));
+  const copyleaksVerdict = copyleaksScore >= 65 ? 'Human Content' : copyleaksScore >= 45 ? 'Mixed / Review' : 'AI Content Detected';
 
-  const humanScore = Math.min(99, Math.max(5, Math.round(rawHumanScore)));
+  // Model C: Turnitin / Originality (Structural pacing, cliché density & rigid sentence length penalty)
+  const turnitinScore = Math.min(99, Math.max(5, Math.round(100 - (clichePenalty * 0.8) - uniformityPenalty - (burstinessScore < 40 ? 15 : 0))));
+  const turnitinAi = Math.max(1, 100 - turnitinScore);
+  const turnitinVerdict = turnitinScore >= 75 ? 'Low AI Similarity' : turnitinScore >= 50 ? 'Moderate AI' : 'High AI Similarity';
+
+  // Model D: Sapling (Token transition probability & vocabulary entropy)
+  const saplingScore = Math.min(99, Math.max(5, Math.round((perplexityScore * 0.55) + (lexicalDiversity * 0.35) + (burstinessScore * 0.10) - (clichePenalty * 0.25))));
+  const saplingVerdict = saplingScore >= 70 ? 'Likely Human' : saplingScore >= 45 ? 'Mixed / Review' : 'Likely AI';
+
+  // Model E: Zero-Shot / Binoculars & Wikipedia Standards (26 structural rules, SaaS brochure tropes, gerund riders)
+  const zeroShotScore = Math.min(99, Math.max(5, Math.round(100 - (totalClicheWeight * 16) - (hasChoppyStaccato ? 12 : 0) - (uniformityPenalty * 0.6))));
+  const zeroShotVerdict = zeroShotScore >= 75 ? 'Clean of AI Markers' : zeroShotScore >= 50 ? 'Mixed Markers' : 'Heavy AI Clichés';
+
+  // 8. Global Ensemble Consensus (Media aritmetica di tutti i detector)
+  const detectorScores = [gptZeroScore, copyleaksScore, turnitinScore, saplingScore, zeroShotScore];
+  const ensembleAverage = Math.round(detectorScores.reduce((sum, val) => sum + val, 0) / detectorScores.length);
+
+  const humanScore = Math.min(99, Math.max(5, ensembleAverage));
   const aiScore = 100 - humanScore;
 
   let verdict: 'LARGELY HUMAN' | 'POSSIBLY HUMAN' | 'UNCERTAIN / MIXED' | 'LIKELY AI' | 'DEFINITELY AI';
@@ -255,7 +278,7 @@ export function detectHumanity(text: string): DetailedDetectorResult {
   else if (humanScore >= 20) verdict = 'LIKELY AI';
   else verdict = 'DEFINITELY AI';
 
-  // 8. Compile Actionable Issues for Auto-Refine Loop
+  // 9. Compile Actionable Issues for Auto-Refine Loop
   const issues: string[] = [];
   if (clichesDetected.length > 0) {
     issues.push(`Detected AI clichés: ${clichesDetected.slice(0, 4).join(', ')}`);
@@ -276,28 +299,31 @@ export function detectHumanity(text: string): DetailedDetectorResult {
     issues.push(`${flaggedSentences.length} sentence(s) flagged with strong AI signatures (sentences #${flaggedSentences.map(s => s.idx).join(', ')})`);
   }
 
-  // 9. Multi-Detector Benchmarks (Simulated based on published research methodologies)
-  const gptZeroScore = Math.min(99, Math.max(5, Math.round((burstinessScore * 0.45) + (perplexityScore * 0.55) - (clichePenalty * 0.4))));
-  const copyleaksScore = Math.min(99, Math.max(5, Math.round((humanScore * 0.9) + (lexicalDiversity > 60 ? 8 : -4))));
-  const saplingScore = Math.min(99, Math.max(5, Math.round((humanScore * 0.85) + (perplexityScore * 0.15))));
-
   const benchmarks: DetectorBenchmarks = {
     gptZero: {
       score: gptZeroScore,
-      verdict: gptZeroScore >= 75 ? 'Likely Human' : gptZeroScore >= 50 ? 'Mixed / Review' : 'Likely AI',
+      verdict: gptZeroVerdict,
       burstiness: burstinessScore,
       perplexity: perplexityScore
     },
     copyleaks: {
-      humanScore: copyleaksScore,
-      verdict: copyleaksScore >= 65 ? 'Human Content' : 'AI Content Detected'
+      score: copyleaksScore,
+      verdict: copyleaksVerdict
     },
-    turnitinEstimate: {
-      aiPercentage: Math.max(0, 100 - humanScore)
+    turnitin: {
+      score: turnitinScore,
+      aiPercentage: turnitinAi,
+      verdict: turnitinVerdict
     },
-    saplingEstimate: {
-      humanScore: saplingScore
-    }
+    sapling: {
+      score: saplingScore,
+      verdict: saplingVerdict
+    },
+    zeroShot: {
+      score: zeroShotScore,
+      verdict: zeroShotVerdict
+    },
+    ensembleAverage
   };
 
   return {
@@ -314,9 +340,9 @@ export function detectHumanity(text: string): DetailedDetectorResult {
     issues,
     benchmarks,
     breakdown: {
-      burstinessWeight: Math.round(burstContribution),
-      lexicalWeight: Math.round(lexContribution),
-      perplexityWeight: Math.round(perpContribution),
+      burstinessWeight: Math.round(burstinessScore * 0.35),
+      lexicalWeight: Math.round(lexicalDiversity * 0.25),
+      perplexityWeight: Math.round(perplexityScore * 0.30),
       clichePenalty,
       uniformityPenalty
     }

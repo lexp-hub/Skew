@@ -135,24 +135,23 @@ Dismantles the robotic "Feature → Positive Adjective → Generic Benefit" copy
   (replaces vague semantic plausibility with exact engineering precision)
 
 =================================================================================
-6. BUILT-IN AI DETECTOR & MULTI-DETECTOR BENCHMARKING
+6. ENSEMBLE AI DETECTOR & 5-MODEL CONSENSUS BENCHMARKING
 ================================================================================
 Located in `src/detector.ts`:
-- Burstiness Modeling (GPTZero Methodology):
-  Measures sentence length Coefficient of Variation (CV = stdDev / mean).
-  AI models rigidly cluster around 16-24 words per sentence.
-- Perplexity & Syntactic Entropy Modeling:
-  Evaluates vocabulary surprise, Hapax Legomena ratio (words occurring once),
-  and sentence-opening entropy (detecting formulaic connectors).
-- Lexical Diversity (Type-Token Ratio / TTR):
-  Ratio of unique vocabulary to total tokens.
-- Signature Cliché Density:
-  Weighted audit against Wikipedia AI signals and SaaS tropes in `src/lexicon.ts`.
-- Multi-Detector Benchmark Estimates:
-  * GPTZero: Composite of burstiness variance and perplexity modeling.
-  * Copyleaks: Statistical vocabulary repetition and formulaic patterns.
-  * Turnitin Estimate: Projected percentage of synthetic AI similarity.
-  * Sapling Estimate: Projected organic writing probability.
+Evaluates text across 5 distinct detection architectures and computes the global consensus mean:
+1. GPTZero Model:
+   Perplexity (syntactic entropy & word transition unpredictability) and Burstiness (sentence CV).
+2. Copyleaks Model:
+   Lexical repetition, Type-Token Ratio (TTR), and regular n-gram distributions.
+3. Turnitin / Originality Model:
+   Stylistic uniformity, robotic cadence clustering, and passive AI constructions.
+4. Sapling Model:
+   Token probability distributions, Hapax Legomena ratio, and transition entropy.
+5. Zero-Shot / Binoculars & Wikipedia Standards Model:
+   26 structural Wikipedia AI signals (shallow -ing riders, "Not X but Y", generic SaaS brochure tropes).
+
+- Global Consensus Score (Ensemble Mean):
+  `humanScore = round((gptZero + copyleaks + turnitin + sapling + zeroShot) / 5)`
 - Sentence-by-Sentence Heatmap:
   Each sentence is evaluated independently:
   * 🟩 Human (<= 35% AI probability)

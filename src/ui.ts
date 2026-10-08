@@ -3,8 +3,12 @@
  * Embedded directly in the Cloudflare Worker with zero external runtime dependencies.
  */
 
+import { ALL_AUDIT_CLICHES } from './lexicon';
+
 export function renderDashboardHTML(): string {
+  const clientClichesJson = JSON.stringify(ALL_AUDIT_CLICHES.map(c => c.phrase));
   return `<!DOCTYPE html>
+
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -724,8 +728,8 @@ export function renderDashboardHTML(): string {
       return html;
     }
 
-    // Input stats & Cliches
-    const CLICHES = ["delve", "tapestry", "testament", "pivotal", "in conclusion", "furthermore", "è fondamentale sottolineare", "svolge un ruolo cruciale", "un mosaico di", "in conclusione"];
+    // Input stats & Cliches from massive database
+    const CLICHES = ${clientClichesJson};
     function updateInputStats() {
       const val = inputText.value || '';
       const words = val.trim() ? val.trim().split(/\\s+/).length : 0;

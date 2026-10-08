@@ -3,6 +3,9 @@
  * Supports Cloudflare Workers AI natively, external cloud providers, and offline heuristics.
  */
 
+import { localPrecisionHumanize } from './localEngine';
+import { getPromptContrastiveExamples, ITALIAN_AI_LEXICON, ENGLISH_AI_LEXICON } from './lexicon';
+
 export type HumanizeMode = 'natural' | 'casual' | 'academic' | 'editorial' | 'executive';
 export type AggressionLevel = 'light' | 'medium' | 'aggressive';
 
@@ -64,28 +67,31 @@ export function buildHumanizerSystemPrompt(options: HumanizeOptions, isItalian: 
       break;
   }
 
-  if (isItalian) {
-    return `Sei SKEW, un editor letterario professionista e autore di madrelingua italiana, basato sui 26 pattern editoriali di Wikipedia ("Signs of AI writing" / Humanizer).
-Il tuo compito è riscrivere il testo eliminando sistematicamente tutti i 26 "segnali rivelatori" della scrittura da chatbot, restituendo una prosa naturale che sembra scritta da una persona reale, senza alterare i fatti o le informazioni.
+  const contrastiveGuide = getPromptContrastiveExamples(isItalian);
 
-REGOLE ISPIRATE AI 26 PATTERN DI WIKIPEDIA / BLADER:
-1. NO SPEZZATINO TELEGRAFICO O DRAMMATIZZAZIONI ARTIFICIALI (§2, §4):
-   - Scrivi periodi completi e coesi. Non usare micro-slogan telegrafici (NO "Code complexity hits hard.", "La chiave? La modularità.", "Perché? Semplice.", "Risultato?").
+  if (isItalian) {
+    return `Sei SKEW, un editor letterario professionista e saggista di madrelingua italiana di massimo livello.
+Il tuo compito è riscrivere il testo fornito in un italiano impeccabile, autentico e naturale, eliminando sistematicamente tutti i 26 "segnali rivelatori" della scrittura da chatbot (Wikipedia "Signs of AI writing" / Blader Humanizer), senza alterare i fatti tecnici o le informazioni.
+
+REGOLE TASSATIVE DI SCRITTURA UMANA:
+1. CADENZA E RITMO ORGANICO (VARIETÀ REALE, NO SPEZZATINO):
+   - Alterna periodi composti ed eleganti (22-35 parole) a proposizioni brevi e incisive (7-12 parole).
+   - VIETATO lo spezzatino telegrafico artificiale di 2-3 parole (NO a slogan come: "Code complexity hits hard.", "La chiave? La modularità.", "Perché? Semplice.", "Risultato? Netto."). Scrivi sempre frasi di senso compiuto.
 2. ELIMINA LA FORMULA "NON SOLO X, MA ANCHE Y" (§1 Not X but Y):
-   - Evita la costruzione artificiale "non solo X, ma Y" o "non è solo X, è Y". Esprimi i concetti in modo diretto.
+   - Evita la costruzione retorica fissa "non solo X, ma Y" o "non si limita a X, ma Y". Esprimi i concetti direttamente.
 3. ELIMINA I GERUNDI DI CODA "SHALLOW -ING RIDERS" (§15):
-   - Rimuovi i gerundi appesi a fine frase per dare finta profondità ("..., minimizzando il rischio", "..., ponendo le basi per", "..., garantendo che"). Trasforma le conseguenze in proposizioni coordinate o frasi dirette.
-4. SMONTA L'IMPORTANZA GONFIATA E I CLICHÉ DA IA (§12, §13, §18):
-   - Sostituisci i verbi che evitano l'essere ("rappresenta una sfida", "si pone come", "agisce da") con forme dirette ("è una sfida", "ha").
-   - Elimina parole iperusate da IA: "svolge un ruolo cruciale", "fondamentale", "inoltre", "in conclusione", "tassello essenziale", "viaggio trasformativo", "mosaico di", "a 360 gradi".
-5. EVITA LE TRIADI FORZATE (§6):
-   - Non raggruppare forzatamente aggettivi o esempi a gruppi di tre solo per sembrare esaustivo.
-6. PUREZZA LINGUISTICA AL 100%:
-   - Scrivi in italiano puro e naturale, con corretta grammatica e articoli (es. "tra gli sviluppatori", mai "tra sviluppatori"). Nessun motto o titolo in inglese.
-7. FEDELTÀ INFORMATIVA:
-   - Mantieni ogni dato, fatto, numero e termine tecnico originale. Non inventare dettagli.
-8. OUTPUT:
-   - Restituisci ESCLUSIVAMENTE il testo finale revisionato.
+   - Rimuovi i gerundi appesi a fine frase per dare finta profondità ("..., minimizzando il rischio", "..., ponendo le basi per", "..., garantendo che"). Trasforma le conseguenze in proposizioni coordinate o coordinate congiunte.
+4. SMONTA LE PERIFRASI E I VERBI GONFIATI (§12, §13, §18):
+   - I chatbot evitano sistematicamente i verbi diretti: usano "rappresenta una sfida", "si pone come obiettivo", "si configura come". Trasformali in verbi diretti ("è una sfida", "punta a", "è").
+   - VIETATE parole spia da IA: "svolge un ruolo cruciale/fondamentale", "gioca un ruolo chiave", "inoltre", "in conclusione", "tassello essenziale", "viaggio trasformativo", "mosaico di", "a 360 gradi", "alla luce di ciò".
+5. PUREZZA LINGUISTICA AL 100%:
+   - Scrivi in italiano naturale e corretto. Non inserire MAI titoli, slogan o motti in lingua inglese a meno che non siano termini tecnici originali (es. "debug", "deployment").
+6. ZERO PREAMBOLI O CHATTER:
+   - VIETATO iniziare con "Ecco il testo:", "Certamente,", "Ecco la riscrittura:" o formule simili.
+   - VIETATO inserire note finali, elenchi di spiegazioni o resoconti sulle modifiche apportate.
+   - RESTITUISCI ESCLUSIVAMENTE IL TESTO FINALE RISCRITTO.
+
+${contrastiveGuide}
 
 ${persona}
 ${aggressionRule}
@@ -93,32 +99,78 @@ ${aggressionRule}
   }
 
   return `You are SKEW, a master human editor and author based on Wikipedia's 26 patterns ("Signs of AI writing" / Humanizer).
-Your task is to rewrite AI-sounding prose so it reads like a human writer without changing what it says, systematically eliminating AI writing tells.
+Your task is to rewrite AI-sounding prose so it reads like a living, skilled human writer without changing what it says, systematically eliminating AI writing tells.
 
-CORE DIRECTIVES (BASED ON WIKIPEDIA / BLADER 26 PATTERNS):
-1. NO STAGED TELEGRAMS OR DRAMATIC CLOSERS (§2, §4):
-   - Write cohesive, complete sentences and paragraphs. Never write choppy 1-3 word bullet fragments ("Complexity hits hard.", "Why? Simple.", "Result? Clear.").
+STRICT EDITORIAL DIRECTIVES:
+1. ORGANIC CADENCE (NO TELEGRAPHIC STACCATO):
+   - Balance longer flowing sentences (22-35 words) with crisp, direct sentences (7-12 words).
+   - NEVER write artificial 1-3 word bullet fragments ("Complexity hits hard.", "Why? Simple.", "Result? Clear."). Write cohesive, complete thoughts.
 2. CUT "NOT X BUT Y" CONTRASTS (§1):
-   - Remove formulaic "It's not just X, it's Y" or "not only X, but also Y". State the claims directly.
+   - Remove formulaic "It's not just X, it's Y" or "not only X, but also Y". State claims directly.
 3. CUT SHALLOW -ING RIDERS (§15):
    - Remove artificial trailing participles bolted onto facts ("..., highlighting the importance", "..., minimizing the risk", "..., laying the groundwork for"). State the consequence directly.
-4. STRIP INFLATED SIGNIFICANCE & OVERUSED WORDS (§12, §13, §18):
+4. STRIP INFLATED VERBS & ROBOTIC BUZZWORDS (§12, §13, §18):
    - Drop "stands as a testament", "plays a crucial/pivotal role", "rich tapestry", "furthermore", "in conclusion", "delve".
-   - Avoid dodging "is, are, has" by replacing with "serves as", "acts as", "represents".
-5. NO FORCED TRIADS (§6):
-   - Do not group concepts into threes by rule.
-6. 100% LANGUAGE FIDELITY:
-   - Match the source language completely. Never invent English headlines for non-English text.
-7. FACTUAL INTEGRITY:
-   - Keep every technical term, fact, and claim. Do not invent details.
-8. OUTPUT ONLY THE REWRITTEN TEXT without chatter or wrappers.
+   - Avoid dodging direct verbs: replace "serves as", "acts as", "represents" with direct verbs.
+5. 100% LANGUAGE FIDELITY:
+   - Match the source language completely. Never inject random foreign words or slogans.
+6. NO CHATTER OR COMMENTARY:
+   - NEVER start with "Here is the rewritten text:", "Sure!", or provide post-rewrite bullet points explaining your edits.
+   - OUTPUT ONLY THE FINAL REWRITTEN TEXT.
+
+${contrastiveGuide}
 
 ${persona}
 ${aggressionRule}
 `;
 }
 
-import { localPrecisionHumanize } from './localEngine';
+/**
+ * Sanitizes and cleans the raw LLM output:
+ * 1. Strips conversational chatter, greetings, and preambles ("Ecco il testo:", "Sure, here is...")
+ * 2. Removes trailing explanation bullet points or post-analysis notes
+ * 3. Deterministically replaces stubborn surviving AI clichés using the lexicon database
+ */
+export function sanitizeAndHarmonizeOutput(rawText: string, isItalian: boolean): string {
+  if (!rawText) return '';
+
+  let cleaned = rawText.trim();
+
+  // Strip Markdown code fence wrappers if present
+  if (cleaned.startsWith('```') && cleaned.endsWith('```')) {
+    cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+  }
+
+  // 1. Strip common conversational preambles (IT & EN)
+  cleaned = cleaned.replace(/^(?:Ecco il testo(?: revisionato| umanizzato| modificato)?:?|Certamente,? ecco(?: la riscrittura| il testo)?:?|Di seguito il testo(?: revisionato)?:?)\s*\n*/i, '');
+  cleaned = cleaned.replace(/^(?:Here is the (?:rewritten|humanized|edited) text:?|Sure,? here is the (?:rewrite|text)?:?|Below is the (?:revised|edited) text:?)\s*\n*/i, '');
+
+  // 2. Strip trailing explanatory sections (e.g. "Ho apportato le seguenti modifiche: ...", "Key changes made: ...")
+  const trailingSplitRegex = /\n\s*(?:(?:Ho apportato le seguenti modifiche|Modifiche principali|Note di revisione|Key changes made|Here is what I changed|Changes applied):?[\s\S]*)$/i;
+  cleaned = cleaned.replace(trailingSplitRegex, '').trim();
+
+  // 3. Deterministic cleanup of stubborn surviving cliches from the lexicon
+  if (isItalian) {
+    for (const item of ITALIAN_AI_LEXICON) {
+      if (item.pattern.test(cleaned)) {
+        const replacement = item.alternatives.natural[0] || '';
+        cleaned = cleaned.replace(item.pattern, replacement);
+      }
+    }
+  } else {
+    for (const item of ENGLISH_AI_LEXICON) {
+      if (item.pattern.test(cleaned)) {
+        const replacement = item.alternatives.natural[0] || '';
+        cleaned = cleaned.replace(item.pattern, replacement);
+      }
+    }
+  }
+
+  // Final trim and whitespace normalization
+  cleaned = cleaned.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+  return cleaned;
+}
 
 export function heuristicHumanize(
   text: string,
@@ -166,9 +218,11 @@ export async function processHumanizeRequest(
     ? `Riscrivi e umanizza questo testo in un italiano naturale, fluido e professionale, preservando tutti i concetti tecnici:\n\n${text}`
     : `Rewrite and humanize this text into natural, fluent, and engaging human writing, preserving all facts and technical terms:\n\n${text}`;
 
+  let rawOutput = '';
+
   // 1. Cloudflare Workers AI (Edge GPU Binding or Direct REST API)
   if (provider === 'cf-ai') {
-    const chosenModel = model || env.CLOUDFLARE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+    const chosenModel = model || env.CLOUDFLARE_MODEL || '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
     if (env.AI) {
       try {
@@ -180,47 +234,46 @@ export async function processHumanizeRequest(
           max_tokens: 2048,
           temperature: Number(temperature) || 0.65,
         });
-        const textOut = response.response || response.choices?.[0]?.message?.content || response.text;
-        if (textOut) return textOut;
+        rawOutput = response.response || response.choices?.[0]?.message?.content || response.text || '';
       } catch (err: any) {
         // Fallback to REST API if AI binding is unavailable in local dev
         if (!env.CLOUDFLARE_ACCOUNT_ID && !env.CLOUDFLARE_API_TOKEN && !apiKey) throw err;
       }
     }
 
-    const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-    const token = apiKey || env.CLOUDFLARE_API_TOKEN;
+    if (!rawOutput) {
+      const accountId = env.CLOUDFLARE_ACCOUNT_ID;
+      const token = apiKey || env.CLOUDFLARE_API_TOKEN;
 
-    if (accountId && token) {
-      const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${chosenModel}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          max_tokens: 2048,
-          temperature: Number(temperature) || 0.65,
-        })
-      });
+      if (accountId && token) {
+        const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${chosenModel}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            max_tokens: 2048,
+            temperature: Number(temperature) || 0.65,
+          })
+        });
 
-      if (!res.ok) {
-        throw new Error(`Cloudflare Workers AI error: ${await res.text()}`);
+        if (!res.ok) {
+          throw new Error(`Cloudflare Workers AI error: ${await res.text()}`);
+        }
+
+        const data: any = await res.json();
+        rawOutput = data.result?.response || data.result?.choices?.[0]?.message?.content || data.result?.text || '';
+      } else {
+        throw new Error('Cloudflare Workers AI binding [env.AI] or CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN is not configured.');
       }
-
-      const data: any = await res.json();
-      return data.result?.response || data.result?.choices?.[0]?.message?.content || data.result?.text || '';
     }
-
-    throw new Error('Cloudflare Workers AI binding [env.AI] or CLOUDFLARE_ACCOUNT_ID & CLOUDFLARE_API_TOKEN is not configured.');
-  }
-
-  // 2. Groq
-  if (provider === 'groq') {
+  } else if (provider === 'groq') {
+    // 2. Groq
     const key = apiKey || env.GROQ_API_KEY;
     if (!key) throw new Error('Groq API Key required. Enter your key in Settings.');
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -235,16 +288,14 @@ export async function processHumanizeRequest(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: Number(temperature) || 0.8,
+        temperature: Number(temperature) || 0.7,
       })
     });
     if (!res.ok) throw new Error(`Groq error: ${await res.text()}`);
     const data: any = await res.json();
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  // 3. OpenAI or Custom
-  if (provider === 'openai' || provider === 'custom') {
+    rawOutput = data.choices?.[0]?.message?.content || '';
+  } else if (provider === 'openai' || provider === 'custom') {
+    // 3. OpenAI or Custom
     const key = apiKey || env.OPENAI_API_KEY;
     const url = provider === 'custom' && customEndpoint ? customEndpoint : 'https://api.openai.com/v1/chat/completions';
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -259,16 +310,14 @@ export async function processHumanizeRequest(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: Number(temperature) || 0.8,
+        temperature: Number(temperature) || 0.7,
       })
     });
     if (!res.ok) throw new Error(`OpenAI error: ${await res.text()}`);
     const data: any = await res.json();
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  // 4. Anthropic
-  if (provider === 'anthropic') {
+    rawOutput = data.choices?.[0]?.message?.content || '';
+  } else if (provider === 'anthropic') {
+    // 4. Anthropic
     const key = apiKey || env.ANTHROPIC_API_KEY;
     if (!key) throw new Error('Anthropic API Key required.');
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -283,16 +332,14 @@ export async function processHumanizeRequest(
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
         max_tokens: 4096,
-        temperature: Number(temperature) || 0.8,
+        temperature: Number(temperature) || 0.7,
       })
     });
     if (!res.ok) throw new Error(`Anthropic error: ${await res.text()}`);
     const data: any = await res.json();
-    return data.content?.[0]?.text || '';
-  }
-
-  // 5. OpenRouter
-  if (provider === 'openrouter') {
+    rawOutput = data.content?.[0]?.text || '';
+  } else if (provider === 'openrouter') {
+    // 5. OpenRouter
     const key = apiKey || env.OPENROUTER_API_KEY;
     if (!key) throw new Error('OpenRouter API Key required.');
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -307,16 +354,14 @@ export async function processHumanizeRequest(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: Number(temperature) || 0.8,
+        temperature: Number(temperature) || 0.7,
       })
     });
     if (!res.ok) throw new Error(`OpenRouter error: ${await res.text()}`);
     const data: any = await res.json();
-    return data.choices?.[0]?.message?.content || '';
-  }
-
-  // 6. Gemini
-  if (provider === 'gemini') {
+    rawOutput = data.choices?.[0]?.message?.content || '';
+  } else if (provider === 'gemini') {
+    // 6. Gemini
     const key = apiKey || env.GEMINI_API_KEY;
     if (!key) throw new Error('Gemini API Key required.');
     const m = model || 'gemini-2.0-flash';
@@ -325,16 +370,14 @@ export async function processHumanizeRequest(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nTask:\n${userPrompt}` }] }],
-        generationConfig: { temperature: Number(temperature) || 0.8 }
+        generationConfig: { temperature: Number(temperature) || 0.7 }
       })
     });
     if (!res.ok) throw new Error(`Gemini error: ${await res.text()}`);
     const data: any = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  }
-
-  // 7. Ollama
-  if (provider === 'ollama') {
+    rawOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else if (provider === 'ollama') {
+    // 7. Ollama
     const res = await fetch(`${ollamaBaseUrl.replace(/\/$/, '')}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -345,19 +388,19 @@ export async function processHumanizeRequest(
           { role: 'user', content: userPrompt }
         ],
         stream: false,
-        options: { temperature: Number(temperature) || 0.8 }
+        options: { temperature: Number(temperature) || 0.7 }
       })
     });
     if (!res.ok) throw new Error(`Ollama error: ${await res.text()}`);
     const data: any = await res.json();
-    return data?.message?.content || '';
-  }
-
-  // 8. Precision Local Engine (Offline / zero-model)
-  if (provider === 'heuristic' || provider === 'local') {
+    rawOutput = data?.message?.content || '';
+  } else if (provider === 'heuristic' || provider === 'local') {
+    // 8. Precision Local Engine (Offline / zero-model)
     return heuristicHumanize(text, mode, aggression);
+  } else {
+    throw new Error(`Unknown provider: ${provider}`);
   }
 
-  throw new Error(`Unknown provider: ${provider}`);
+  // Pass through the deterministic sanitization & harmonization pipeline
+  return sanitizeAndHarmonizeOutput(rawOutput, isItalian);
 }
-

@@ -1,26 +1,9 @@
 /**
  * SKEW - AI Text & Human Metrics Analyzer
+ * Deep detection of AI signatures, clichés, syntactic variance, and burstiness.
  */
 
-export const AI_CLICHES = [
-  // English markers
-  "delve", "delving", "tapestry", "testament", "beacon", "pivotal",
-  "in the realm of", "it's important to remember", "it is worth noting",
-  "furthermore", "moreover", "in conclusion", "vital role", "crucial role",
-  "embark", "unravel", "navigate the complexities", "dynamic landscape",
-  "ever-evolving", "foster", "holistic", "multifaceted", "paramount",
-  "rich tapestry", "game-changer", "harness", "resonate", "spearhead",
-  "seamlessly", "intertwined", "transformative journey",
-
-  // Italian markers
-  "è fondamentale sottolineare", "in conclusione", "inoltre",
-  "nel regno di", "un testamento a", "un mosaico di", "crocevia",
-  "esplorare le complessità", "panorama in continua evoluzione",
-  "svolge un ruolo cruciale", "svolge un ruolo fondamentale",
-  "vale la pena notare", "è importante ricordare che", "intrecciato",
-  "far luce su", "tassello fondamentale", "viaggio trasformativo",
-  "armonioso", "poliedrico", "sinergia", "catalizzatore"
-];
+import { ALL_AUDIT_CLICHES } from './lexicon';
 
 export interface TextMetrics {
   wordCount: number;
@@ -76,35 +59,50 @@ export function analyzeTextMetrics(text: string): TextMetrics {
   }
   const stdDev = Math.sqrt(variance);
   const cv = avgSentenceLength > 0 ? (stdDev / avgSentenceLength) : 0;
-  const burstinessScore = Math.min(100, Math.max(10, Math.round(cv * 110)));
+  // Scaled burstiness score
+  const burstinessScore = Math.min(100, Math.max(10, Math.round(cv * 120)));
 
   // Lexical Diversity (Type-Token Ratio)
   const uniqueWords = new Set(words);
   const ttr = wordCount > 0 ? (uniqueWords.size / wordCount) : 0;
   const lexicalDiversity = Math.min(100, Math.round(ttr * 100));
 
-  // Cliché phrase detection
+  // Deep Cliché & AI Signature phrase detection from massive lexicon
   const lowerText = clean.toLowerCase();
   const clichesFound: string[] = [];
-  for (const cliche of AI_CLICHES) {
-    if (lowerText.includes(cliche)) {
-      clichesFound.push(cliche);
+  let totalClichePenalty = 0;
+
+  for (const item of ALL_AUDIT_CLICHES) {
+    if (lowerText.includes(item.phrase)) {
+      // Avoid duplicate sub-phrases (e.g. "è fondamentale" if already matched "è fondamentale sottolineare")
+      const alreadyCovered = clichesFound.some(existing => existing.includes(item.phrase));
+      if (!alreadyCovered) {
+        clichesFound.push(item.phrase);
+        totalClichePenalty += item.weight * 12;
+      }
     }
   }
 
   // Composite Human Probability Score
-  let score = (burstinessScore * 0.45) + (lexicalDiversity * 0.35);
-  const clichePenalty = Math.min(45, clichesFound.length * 15);
-  score -= clichePenalty;
+  let score = (burstinessScore * 0.40) + (lexicalDiversity * 0.35);
+  score -= Math.min(60, totalClichePenalty);
 
-  if (sentenceCount >= 3 && stdDev < 2.5) {
-    score -= 20;
+  // Penalty if all sentences have nearly identical lengths (robotic pacing)
+  if (sentenceCount >= 3 && stdDev < 3.0) {
+    score -= 15;
   }
 
-  const hasShort = sentenceLengths.some(l => l <= 5);
-  const hasLong = sentenceLengths.some(l => l >= 20);
+  // Bonus for natural pacing: mixture of concise punchy clauses and complex sentences
+  const hasShort = sentenceLengths.some(l => l >= 6 && l <= 12);
+  const hasLong = sentenceLengths.some(l => l >= 24);
   if (hasShort && hasLong) {
     score += 15;
+  }
+
+  // Penalty if artificial 1-2 word staccato telegrams are detected
+  const hasChoppyStaccato = sentenceLengths.some(l => l <= 3);
+  if (hasChoppyStaccato) {
+    score -= 10;
   }
 
   const finalHumanScore = Math.min(99, Math.max(5, Math.round(score)));
@@ -122,4 +120,3 @@ export function analyzeTextMetrics(text: string): TextMetrics {
     readingTimeMinutes,
   };
 }
-

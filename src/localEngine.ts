@@ -34,9 +34,12 @@ interface ReplacementRule {
   };
 }
 
+import { ITALIAN_AI_LEXICON, ENGLISH_AI_LEXICON } from './lexicon';
+
 // ---------------------------------------------------------------------------
 // 2. ITALIAN RULES (Unicode-aware, handles accents & gender agreement)
 // ---------------------------------------------------------------------------
+
 
 const ITALIAN_RULES: ReplacementRule[] = [
   // --- Formulaic Openers & Assertions ---
@@ -843,15 +846,20 @@ export function localPrecisionHumanize(
 
   const prng = new SimplePRNG(seed);
   const lang = detectLanguage(input);
-  const rules = lang === 'it' ? ITALIAN_RULES : ENGLISH_RULES;
+  const baseRules = lang === 'it' ? ITALIAN_RULES : ENGLISH_RULES;
+  const lexiconRules = (lang === 'it' ? ITALIAN_AI_LEXICON : ENGLISH_AI_LEXICON).map(entry => ({
+    pattern: entry.pattern,
+    replacements: entry.alternatives
+  }));
+  const rules = [...lexiconRules, ...baseRules];
 
   // Step 1: Execute Pattern & Cliché Transformations
   let transformed = input;
 
   for (const rule of rules) {
     transformed = transformed.replace(rule.pattern, (matched) => {
-      const candidates = rule.replacements[mode] || rule.replacements.natural;
-      let chosen = prng.pick(candidates);
+      const candidates: string[] = (rule.replacements as any)[mode] || rule.replacements.natural;
+      let chosen: string = prng.pick(candidates) || '';
 
       // Preserve capitalization of the first letter if original was capitalized
       if (/^[A-Z\xC0-\xDF]/u.test(matched.trim())) {

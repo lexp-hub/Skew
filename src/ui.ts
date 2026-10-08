@@ -996,6 +996,41 @@ export function renderDashboardHTML(): string {
       });
     });
 
+    function renderDetectorBenchmarks(bm, det) {
+      if (!bm) return;
+      try {
+        const setSafe = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val !== undefined && val !== null) el.innerText = val;
+        };
+        if (bm.gptZero) {
+          setSafe('bmGptZero', (bm.gptZero.score ?? '--') + '%');
+          setSafe('bmGptZeroVerdict', bm.gptZero.verdict || 'AWAITING');
+        }
+        if (bm.copyleaks) {
+          setSafe('bmCopyleaks', (bm.copyleaks.score ?? bm.copyleaks.humanScore ?? '--') + '%');
+          setSafe('bmCopyleaksVerdict', bm.copyleaks.verdict || 'AWAITING');
+        }
+        if (bm.turnitin || bm.turnitinEstimate) {
+          const tScore = bm.turnitin?.score ?? (bm.turnitinEstimate?.aiPercentage !== undefined ? (100 - bm.turnitinEstimate.aiPercentage) : (bm.turnitin?.aiPercentage !== undefined ? (100 - bm.turnitin.aiPercentage) : '--'));
+          setSafe('bmTurnitin', tScore + '%');
+          setSafe('bmTurnitinVerdict', bm.turnitin?.verdict || 'ESTIMATED');
+        }
+        if (bm.sapling || bm.saplingEstimate) {
+          setSafe('bmSapling', (bm.sapling?.score ?? bm.saplingEstimate?.humanScore ?? '--') + '%');
+          setSafe('bmSaplingVerdict', bm.sapling?.verdict || 'AWAITING');
+        }
+        if (bm.zeroShot) {
+          setSafe('bmZeroShot', (bm.zeroShot.score ?? '--') + '%');
+          setSafe('bmZeroShotVerdict', bm.zeroShot.verdict || 'AWAITING');
+        }
+        const avg = bm.ensembleAverage ?? (det ? det.humanScore : '--');
+        setSafe('bmAverage', avg + '%');
+      } catch (err) {
+        console.warn('Benchmark rendering notice:', err);
+      }
+    }
+
     // AI Detector Runner
     async function runDetectorScan() {
       const textToScan = outputText.value.trim() || inputText.value.trim();
@@ -1021,20 +1056,7 @@ export function renderDashboardHTML(): string {
           document.getElementById('detPerp').innerText = (det.perplexityScore || 50) + '%';
         }
 
-        if (det.benchmarks) {
-          const bm = det.benchmarks;
-          document.getElementById('bmGptZero').innerText = bm.gptZero.score + '%';
-          document.getElementById('bmGptZeroVerdict').innerText = bm.gptZero.verdict;
-          document.getElementById('bmCopyleaks').innerText = bm.copyleaks.score + '%';
-          document.getElementById('bmCopyleaksVerdict').innerText = bm.copyleaks.verdict;
-          document.getElementById('bmTurnitin').innerText = bm.turnitin.score + '%';
-          document.getElementById('bmTurnitinVerdict').innerText = bm.turnitin.verdict;
-          document.getElementById('bmSapling').innerText = bm.sapling.score + '%';
-          document.getElementById('bmSaplingVerdict').innerText = bm.sapling.verdict;
-          document.getElementById('bmZeroShot').innerText = bm.zeroShot.score + '%';
-          document.getElementById('bmZeroShotVerdict').innerText = bm.zeroShot.verdict;
-          document.getElementById('bmAverage').innerText = bm.ensembleAverage + '%';
-        }
+        renderDetectorBenchmarks(det.benchmarks, det);
 
         const badge = document.getElementById('detVerdictBadge');
         badge.innerText = det.verdict;
@@ -1240,20 +1262,7 @@ export function renderDashboardHTML(): string {
             badge.style.borderColor = '#ef4444';
           }
 
-          if (det.benchmarks) {
-            const bm = det.benchmarks;
-            document.getElementById('bmGptZero').innerText = bm.gptZero.score + '%';
-            document.getElementById('bmGptZeroVerdict').innerText = bm.gptZero.verdict;
-            document.getElementById('bmCopyleaks').innerText = bm.copyleaks.score + '%';
-            document.getElementById('bmCopyleaksVerdict').innerText = bm.copyleaks.verdict;
-            document.getElementById('bmTurnitin').innerText = bm.turnitin.score + '%';
-            document.getElementById('bmTurnitinVerdict').innerText = bm.turnitin.verdict;
-            document.getElementById('bmSapling').innerText = bm.sapling.score + '%';
-            document.getElementById('bmSaplingVerdict').innerText = bm.sapling.verdict;
-            document.getElementById('bmZeroShot').innerText = bm.zeroShot.score + '%';
-            document.getElementById('bmZeroShotVerdict').innerText = bm.zeroShot.verdict;
-            document.getElementById('bmAverage').innerText = bm.ensembleAverage + '%';
-          }
+          renderDetectorBenchmarks(det.benchmarks, det);
 
           // Auto-refine iterations display
           const iterBox = document.getElementById('iterationHistoryBox');

@@ -29,6 +29,7 @@ export interface DetectorBenchmarks {
   };
   copyleaks: {
     score: number; // 0-100% human
+    humanScore?: number; // Backward compatibility
     verdict: string;
   };
   turnitin: {
@@ -36,9 +37,16 @@ export interface DetectorBenchmarks {
     aiPercentage: number;
     verdict: string;
   };
+  turnitinEstimate?: {
+    aiPercentage: number;
+    score: number;
+  };
   sapling: {
     score: number; // 0-100% human
     verdict: string;
+  };
+  saplingEstimate?: {
+    humanScore: number;
   };
   zeroShot: {
     score: number; // 0-100% human
@@ -86,9 +94,11 @@ export function detectHumanity(text: string): DetailedDetectorResult {
       issues: ['No text provided for analysis.'],
       benchmarks: {
         gptZero: { score: 50, verdict: 'UNCERTAIN / MIXED', burstiness: 50, perplexity: 50 },
-        copyleaks: { score: 50, verdict: 'UNCERTAIN / MIXED' },
+        copyleaks: { score: 50, humanScore: 50, verdict: 'UNCERTAIN / MIXED' },
         turnitin: { score: 50, aiPercentage: 50, verdict: 'UNCERTAIN / MIXED' },
+        turnitinEstimate: { score: 50, aiPercentage: 50 },
         sapling: { score: 50, verdict: 'UNCERTAIN / MIXED' },
+        saplingEstimate: { humanScore: 50 },
         zeroShot: { score: 50, verdict: 'UNCERTAIN / MIXED' },
         ensembleAverage: 50
       },
@@ -308,6 +318,7 @@ export function detectHumanity(text: string): DetailedDetectorResult {
     },
     copyleaks: {
       score: copyleaksScore,
+      humanScore: copyleaksScore,
       verdict: copyleaksVerdict
     },
     turnitin: {
@@ -315,9 +326,16 @@ export function detectHumanity(text: string): DetailedDetectorResult {
       aiPercentage: turnitinAi,
       verdict: turnitinVerdict
     },
+    turnitinEstimate: {
+      score: turnitinScore,
+      aiPercentage: turnitinAi
+    },
     sapling: {
       score: saplingScore,
       verdict: saplingVerdict
+    },
+    saplingEstimate: {
+      humanScore: saplingScore
     },
     zeroShot: {
       score: zeroShotScore,

@@ -104,6 +104,10 @@ REGOLE TASSATIVE DI SCRITTURA UMANA:
    - VIETATO espandere il testo in saggi a più paragrafi o inventare nuovi concetti.
 10. FEDELTÀ ALLA LINGUA ORIGINALE:
    - L'output DEVE essere al 100% in italiano. Non tradurre mai in inglese o altre lingue.
+11. NESSUNA FORMATTAZIONE MARKDOWN O GRASSETTO (SOLO TESTO SEMPLICE):
+   - VIETATO l'uso di markup markdown: NON usare asterischi per il grassetto (**testo**) o corsivo (*testo*), né elenchi puntati (* o -).
+   - VIETATO spezzare ogni singola frase su una riga vuota separata (\n\n). Se l'originale era un paragrafo continuo, mantienilo come un unico paragrafo fluido.
+   - Restituisci ESCLUSIVAMENTE testo semplice (raw plain text).
 
 ${contrastiveGuide}
 ${refinementIssues && refinementIssues.length > 0 ? `\nDIRETTIVE DI AUTO-RIFINITURA (PASSAGGIO SUCCESSIVO):\n- I rilevatori IA hanno segnalato le seguenti anomalie nella bozza precedente:\n  ${refinementIssues.map(i => `* ${i}`).join('\n  ')}\n- Riorganizza il ritmo alternando frasi brevi e incisive a periodi più ampi.\n- Non allungare il testo né aggiungere nuovi paragrafi: mantieni la concisione dell'originale.\n` : ''}
@@ -137,6 +141,10 @@ STRICT EDITORIAL DIRECTIVES:
 8. STRICT PRESERVATION OF LENGTH AND PARAGRAPH STRUCTURE:
    - You MUST strictly preserve the original paragraph structure and approximate length. If the input is 1 paragraph (approx. 40-70 words), the output MUST be a single paragraph of similar length.
    - NEVER expand short paragraphs into multi-paragraph essays or invent unsolicited topics.
+9. NO MARKDOWN FORMATTING (RAW PLAIN TEXT ONLY):
+   - NEVER use markdown formatting: NO bold (**text**), NO italics (*text*), NO bullet lists, NO numbered points.
+   - NEVER put blank lines between every single sentence. If the input is a single continuous paragraph, maintain a single coherent flowing paragraph.
+   - Output 100% clean, unadorned plain text.
 
 ${contrastiveGuide}
 ${refinementIssues && refinementIssues.length > 0 ? `\nPRIORITY AUTO-REFINEMENT DIRECTIVES (TARGETED REVISION):\n- AI detectors flagged these issues in the previous draft:\n  ${refinementIssues.map(i => `* ${i}`).join('\n  ')}\n- Contrast short crisp sentences with flowing complex clauses.\n- Do NOT expand the text or add new paragraphs: strictly preserve original brevity.\n` : ''}
@@ -208,6 +216,26 @@ export function sanitizeAndHarmonizeOutput(rawText: string, isItalian: boolean, 
         const replacement = item.alternatives.natural[0] || '';
         cleaned = cleaned.replace(item.pattern, replacement);
       }
+    }
+  }
+
+  // 5. Strip unwanted markdown decorators (bold/italic asterisks) if original didn't contain them
+  if (!originalText.includes('**')) {
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+  }
+  if (!originalText.includes('*')) {
+    cleaned = cleaned.replace(/(^|[^*])\*([^*]+)\*([^*]|$)/g, '$1$2$3');
+  }
+
+  // 6. Prevent artificial sentence fragmentation on blank lines:
+  // If the original input was a single continuous paragraph without double-newlines,
+  // ensure the model didn't fragment each sentence onto its own separate paragraph
+  const origParagraphs = originalText.trim().split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  if (origParagraphs.length <= 1 && cleaned.includes('\n\n')) {
+    const outputParagraphs = cleaned.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    // If output split into 2+ short chunks
+    if (outputParagraphs.length >= 2 && outputParagraphs.every(p => p.trim().split(/\s+/).length < 40)) {
+      cleaned = outputParagraphs.map(p => p.trim()).join(' ');
     }
   }
 

@@ -452,19 +452,19 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     pattern: /(?<!\p{L})reattività istantanea(?!\p{L})/giu,
     category: 'buzzword',
     alternatives: {
-      natural: ["risposte immediate", "senza latenza percettibile", "tempi di risposta fulminei"],
-      casual: ["zero lag", "velocissimo nei click"],
+      natural: ["risposta immediata", "tempi di risposta fulminei", "risposte rapide"],
+      casual: ["zero lag", "velocissimo"],
       editorial: ["scatto immediato", "risposta al millisecondo"],
       academic: ["elevata responsività con latenze minime"],
-      executive: ["latenza quasi nulla"]
+      executive: ["tempi di risposta immediati"]
     },
-    explanation: "Aggettivo iperbolico da brochure."
+    explanation: "Aggettivo iperbolico da brochure: preferire 'risposta immediata'."
   },
   {
     pattern: /(?<!\p{L})interfaccia (?:è )?(?:pulita e intuitiva|intuitiva e pulita)(?!\p{L})/giu,
     category: 'buzzword',
     alternatives: {
-      natural: ["comandi subito a portata di mano", "interfaccia essenziale e ordinata", "schermata priva di elementi superflui"],
+      natural: ["I comandi sono subito a portata di mano", "interfaccia essenziale e ordinata", "schermata priva di elementi superflui"],
       casual: ["facile da usare al primo colpo", "senza pulsanti inutili"],
       editorial: ["un'interfaccia che non fa perdere tempo", "un layout pulito ed efficace"],
       academic: ["interfaccia utente a bassa complessità cognitiva"],
@@ -476,7 +476,7 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     pattern: /(?<!\p{L})con un semplice cli(?:ck|c)(?!\p{L})/giu,
     category: 'closer',
     alternatives: {
-      natural: ["subito", "con un solo comando", "direttamente", "all'istante"],
+      natural: ["", "subito", "con un solo comando", "direttamente"],
       casual: ["al volo", "in un attimo"],
       editorial: ["in un lampo", "con un colpo solo"],
       academic: ["in un unico passaggio operativo"],
@@ -488,7 +488,7 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     pattern: /(?<!\p{L})(?:, )?permettendo di monitorare(?!\p{L})/giu,
     category: 'closer',
     alternatives: {
-      natural: [": così controlli", ", per seguire", "; si possono monitorare"],
+      natural: [", così controlli", ", per seguire", "; si possono monitorare"],
       casual: [" e ti fa tenere d'occhio", ", così vedi subito"],
       editorial: [", aprendo la vista su"],
       academic: [", consentendo la rilevazione di"],
@@ -500,8 +500,8 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     pattern: /(?<!\p{L})(?:, )?consentendo di gestire(?!\p{L})/giu,
     category: 'closer',
     alternatives: {
-      natural: [", così da gestire", "; permette di organizzare", " e gestisce"],
-      casual: [" e ti fa gestire", ", per sistemare"],
+      natural: [" e permettono di organizzare", ", così da gestire", " e gestiscono"],
+      casual: [" e ti fanno gestire", ", per sistemare"],
       editorial: [", prendendo il controllo di"],
       academic: [", facilitando l'amministrazione di"],
       executive: [", semplificando la governance di"]
@@ -512,7 +512,7 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     pattern: /(?<!\p{L})assicura uniformità in ogni sessione(?!\p{L})/giu,
     category: 'closer',
     alternatives: {
-      natural: ["mantiene coerente lo stato dell'applicazione", "evita discrepanze nei dati tra una sessione e l'altra", "garantisce che i dati restino allineati"],
+      natural: ["mantiene allineato e coerente lo stato dell'applicazione", "evita discrepanze nei dati tra una sessione e l'altra", "garantisce che i dati restino allineati"],
       casual: ["lascia tutto sincronizzato tra una sessione e l'altra", "non perde un dato da una sessione all'altra"],
       editorial: ["preserva la totale coerenza dello stato tra sessioni"],
       academic: ["garantisce la persistenza e l'allineamento deterministico dello stato"],
@@ -521,16 +521,16 @@ export const ITALIAN_AI_LEXICON: LexiconEntry[] = [
     explanation: "Plausibilità semantica fasulla: sincronizzazione assicura coerenza/allineamento di stato, non 'uniformità'."
   },
   {
-    pattern: /(?<!\p{L})parametri cruciali senza distrazioni(?!\p{L})/giu,
+    pattern: /(?<!\p{L})(?:i )?parametri cruciali senza distrazioni(?!\p{L})/giu,
     category: 'buzzword',
     alternatives: {
-      natural: ["metriche essenziali senza ingombrare lo schermo", "parametri chiave senza elementi di disturbo", "dati utili a colpo d'occhio"],
+      natural: ["le metriche essenziali senza ingombrare lo schermo", "i parametri chiave senza elementi di disturbo", "i dati utili a colpo d'occhio"],
       casual: ["i dati che contano davvero senza perdersi nei menu", "le cose importanti al volo"],
       editorial: ["i segnali vitali senza rumore di fondo"],
       academic: ["le variabili critiche con ridotto carico visivo"],
       executive: ["i KPI operativi senza rumore informativo"]
     },
-    explanation: "Promessa promozionale vuota."
+    explanation: "Promessa promozionale vuota. Usa correttamente il femminile 'le metriche essenziali'."
   }
 ];
 
@@ -828,10 +828,11 @@ DIZIONARIO CONTRASTIVO DI TRASFORMAZIONE (CLICHÉ DA BOT -> ALTERNATIVA UMANA):
 - "navigare le complessità" -> "gestire le difficoltà" / "districarsi tra i problemi"
 - "ponendo le basi per / minimizzando il rischio" -> "riduce il rischio" / "e crea le condizioni per" (NO gerundi di coda)
 - "fondersi perfettamente nel flusso di lavoro" -> "integrarsi nel lavoro quotidiano" / "lavorare nel proprio ambiente"
-- "architettura snella / reattività istantanea" -> "struttura leggera" / "senza latenza" / "risponde subito"
-- "interfaccia pulita e intuitiva" -> "comandi subito a portata di mano" / "interfaccia ordinata"
-- "con un semplice clic" -> "subito" / "con un solo comando" / "all'istante"
-- "permettendo di monitorare / consentendo di gestire" -> ": così controlli" / "e permette di organizzare"
+- "architettura snella / reattività istantanea" -> "struttura leggera" / "risposta immediata" (evita "senza latenza", suona assoluto)
+- "parametri cruciali senza distrazioni" -> "le metriche essenziali senza ingombrare lo schermo" (femminile: LE metriche)
+- "interfaccia pulita e intuitiva" -> "I comandi sono subito a portata di mano" / "interfaccia essenziale"
+- "con un semplice clic / rapide all'istante" -> "rapide" / "subito" / "con un solo comando" (elimina ridondanze come "rapide all'istante")
+- "permettendo di monitorare / consentendo di gestire" -> ", così controlli" / "e permettono di organizzare"
 - "assicura uniformità in ogni sessione" -> "mantiene allineato e coerente lo stato dell'applicazione"
 `;
   }

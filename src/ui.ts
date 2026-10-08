@@ -1171,8 +1171,12 @@ export function renderDashboardHTML(): string {
         setTimeout(() => { progressWrapper.style.display = 'none'; }, 2200);
 
         outputText.value = data.humanizedText;
-        document.getElementById('outWords').innerText = data.humanizedText.trim().split(/\s+/).length;
+        const outWordCount = data.humanizedText.trim() ? data.humanizedText.trim().split(/\s+/).filter(Boolean).length : 0;
+        document.getElementById('outWords').innerText = outWordCount;
         document.getElementById('outChars').innerText = data.humanizedText.length;
+        if (data.detection) {
+          document.getElementById('outBurst').innerText = data.detection.burstinessScore + '%';
+        }
         document.getElementById('btnRepass').style.display = 'inline-block';
 
         // Audit stats

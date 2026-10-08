@@ -13,10 +13,11 @@ export type AggressionLevel = 'light' | 'medium' | 'aggressive';
 export interface HumanizeOptions {
   mode: HumanizeMode;
   aggression: AggressionLevel;
+  refinementIssues?: string[];
 }
 
 export function buildHumanizerSystemPrompt(options: HumanizeOptions, isItalian: boolean = false): string {
-  const { mode, aggression } = options;
+  const { mode, aggression, refinementIssues } = options;
 
   let persona = "";
   switch (mode) {
@@ -98,9 +99,14 @@ REGOLE TASSATIVE DI SCRITTURA UMANA:
 8. MAI INVENTARE DEFINIZIONI ENCICLOPEDICHE O SPIEGAZIONI (REGOLA PAROLE ISOLATE):
    - Se l'utente inserisce una singola parola, un frammento breve o un termine comune che NON è un cliché (es. "calcio", "pizza", "computer", "roma"), NON spiegare che cos'è (MAI produrre "Il calcio è uno sport...", "La pizza è un piatto...").
    - Se il termine o frammento non contiene formule stereotipate da IA, restituiscilo TAL QUALE senza inventare una voce di Wikipedia. Modificalo SOLO se è un cliché registrato (es. "inoltre" -> "in più", "fondamentale" -> "determinante").
+9. RISPETTO RIGOROSO DELLA LUNGHEZZA E DEI PARAGRAFI ORIGINALI:
+   - Mantieni ESATTAMENTE la stessa struttura a paragrafi del testo originale. Se il testo originale è composto da 1 solo paragrafo (circa 40-70 parole), la riscrittura DEVE essere un singolo paragrafo di lunghezza comparabile.
+   - VIETATO espandere il testo in saggi a più paragrafi o inventare nuovi concetti.
+10. FEDELTÀ ALLA LINGUA ORIGINALE:
+   - L'output DEVE essere al 100% in italiano. Non tradurre mai in inglese o altre lingue.
 
 ${contrastiveGuide}
-
+${refinementIssues && refinementIssues.length > 0 ? `\nDIRETTIVE DI AUTO-RIFINITURA (PASSAGGIO SUCCESSIVO):\n- I rilevatori IA hanno segnalato le seguenti anomalie nella bozza precedente:\n  ${refinementIssues.map(i => `* ${i}`).join('\n  ')}\n- Riorganizza il ritmo alternando frasi brevi e incisive a periodi più ampi.\n- Non allungare il testo né aggiungere nuovi paragrafi: mantieni la concisione dell'originale.\n` : ''}
 ${persona}
 ${aggressionRule}
 `;
@@ -120,17 +126,20 @@ STRICT EDITORIAL DIRECTIVES:
 4. STRIP INFLATED VERBS & ROBOTIC BUZZWORDS (§12, §13, §18):
    - Drop "stands as a testament", "plays a crucial/pivotal role", "rich tapestry", "furthermore", "in conclusion", "delve".
    - Avoid dodging direct verbs: replace "serves as", "acts as", "represents" with direct verbs.
-5. 100% LANGUAGE FIDELITY:
-   - Match the source language completely. Never inject random foreign words or slogans.
+5. 100% LANGUAGE FIDELITY (ENGLISH ONLY):
+   - THE OUTPUT MUST BE WRITTEN 100% IN NATURAL HUMAN ENGLISH. NEVER TRANSLATE TO ITALIAN OR ANY OTHER LANGUAGE.
 6. NO CHATTER OR COMMENTARY:
    - NEVER start with "Here is the rewritten text:", "Sure!", or provide post-rewrite bullet points explaining your edits.
    - OUTPUT ONLY THE FINAL REWRITTEN TEXT.
 7. NO ENCYCLOPEDIC DEFINITIONS FOR ISOLATED WORDS:
    - If the user provides a single word or short phrase that is not an AI cliché (e.g. "soccer", "pizza", "computer"), DO NOT generate an encyclopedia definition ("Soccer is a team sport...").
    - If there is no AI cliché to rewrite, return the term AS IS. Only rewrite if the word matches a known AI marker (e.g. "furthermore" -> "also", "delve" -> "explore").
+8. STRICT PRESERVATION OF LENGTH AND PARAGRAPH STRUCTURE:
+   - You MUST strictly preserve the original paragraph structure and approximate length. If the input is 1 paragraph (approx. 40-70 words), the output MUST be a single paragraph of similar length.
+   - NEVER expand short paragraphs into multi-paragraph essays or invent unsolicited topics.
 
 ${contrastiveGuide}
-
+${refinementIssues && refinementIssues.length > 0 ? `\nPRIORITY AUTO-REFINEMENT DIRECTIVES (TARGETED REVISION):\n- AI detectors flagged these issues in the previous draft:\n  ${refinementIssues.map(i => `* ${i}`).join('\n  ')}\n- Contrast short crisp sentences with flowing complex clauses.\n- Do NOT expand the text or add new paragraphs: strictly preserve original brevity.\n` : ''}
 ${persona}
 ${aggressionRule}
 `;
@@ -220,6 +229,37 @@ export function heuristicHumanize(
   });
 }
 
+/**
+ * Accurately determines if text is Italian or English by measuring
+ * unambiguous grammatical stopword distributions and syntactic markers.
+ */
+export function detectLanguage(text: string): 'it' | 'en' {
+  const clean = (text || '').toLowerCase();
+
+  // Distinctive Italian tokens that do not exist as common English words
+  const italianTokens = clean.match(/(?<!\p{L})(?:che|il|lo|la|gli|le|un'|del|dello|della|dei|degli|delle|nel|nello|nella|nei|negli|nelle|questo|questa|questi|queste|quello|quella|quelli|quelle|sono|siamo|essere|avere|anche|perché|tuttavia|inoltre|fondamentale|cruciale|dobbiamo|sviluppatori|architettura|codice|infatti|quindi|pertanto|sebbene|mentre|nostro|nostra|loro)(?!\p{L})/giu) || [];
+
+  // Distinctive English tokens that do not exist as common Italian words
+  const englishTokens = clean.match(/(?<!\p{L})(?:the|is|are|was|were|this|that|these|those|with|from|have|has|had|they|them|their|we|our|you|your|which|what|when|where|why|how|into|furthermore|moreover|however|because|would|should|could|its|it's|been|will|shall|delve|testament|tapestry|landscape|shaping|ingenuity|revolution)(?!\p{L})/giu) || [];
+
+  if (englishTokens.length > italianTokens.length) {
+    return 'en';
+  }
+  if (italianTokens.length > englishTokens.length) {
+    return 'it';
+  }
+
+  // Tiebreakers for short snippets:
+  if (/(?<!\p{L})(?:the|this|that|with|from|into|they|their|which|is|are|was|were|today)(?!\p{L})/iu.test(clean)) {
+    return 'en';
+  }
+  if (/(?<!\p{L})(?:il|lo|la|gli|del|della|dei|sono|questo|questa|che|perché|calcio|pizza)(?!\p{L})/iu.test(clean)) {
+    return 'it';
+  }
+
+  return 'en';
+}
+
 export interface HumanizeRequestPayload {
   text: string;
   provider?: string;
@@ -230,6 +270,10 @@ export interface HumanizeRequestPayload {
   mode?: HumanizeMode;
   aggression?: AggressionLevel;
   temperature?: number;
+  autoRefine?: boolean;
+  targetScore?: number;
+  maxPasses?: number;
+  refinementIssues?: string[];
 }
 
 export async function processHumanizeRequest(
@@ -246,12 +290,13 @@ export async function processHumanizeRequest(
     mode = 'natural',
     aggression = 'medium',
     temperature = 0.65,
+    refinementIssues
   } = payload;
 
   const cleanInput = (text || '').trim();
   const inputWords = cleanInput.split(/\s+/).filter(Boolean);
 
-  const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice|inoltre|calcio|tuttavia|fondamentale|cruciale)(?!\p{L})/giu.test(text);
+  const isItalian = detectLanguage(cleanInput) === 'it';
 
   // If input is a short fragment (up to 6 words), check if it matches a known AI cliché in the lexicon
   if (inputWords.length <= 6) {
@@ -266,10 +311,10 @@ export async function processHumanizeRequest(
     }
   }
 
-  const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression }, isItalian);
+  const systemPrompt = buildHumanizerSystemPrompt({ mode, aggression, refinementIssues }, isItalian);
   const userPrompt = isItalian
-    ? `Riscrivi e umanizza questo testo in un italiano naturale, fluido e professionale, preservando tutti i concetti tecnici:\n\n${text}`
-    : `Rewrite and humanize this text into natural, fluent, and engaging human writing, preserving all facts and technical terms:\n\n${text}`;
+    ? `Riscrivi e umanizza questo testo in un italiano naturale, fluido e professionale, preservando tutti i concetti tecnici e la lunghezza originale (non espandere in paragrafi aggiuntivi):\n\n${cleanInput}`
+    : `Rewrite and humanize this text in natural, fluent human English, strictly preserving all facts, original brevity, and paragraph structure. Output in English only:\n\n${cleanInput}`;
 
   let rawOutput = '';
 
@@ -484,30 +529,28 @@ export async function autoRefineHumanize(
   env: any
 ): Promise<AutoRefineResult> {
   const targetScore = Math.min(99, Math.max(50, payload.targetScore || 85));
-  const maxPasses = Math.min(4, Math.max(1, payload.maxPasses || 3));
+  const maxPasses = Math.min(3, Math.max(1, payload.maxPasses || 3));
   const iterations: AutoRefineIteration[] = [];
 
-  let currentText = payload.text;
   let lastResultText = '';
   let finalDetection: DetailedDetectorResult | null = null;
+  let refinementIssues: string[] = [];
 
   for (let pass = 1; pass <= maxPasses; pass++) {
-    let currentPayload = { ...payload };
+    const currentPayload: HumanizeRequestPayload = {
+      ...payload,
+      // Pass 1 rewrites the user text. Pass 2+ rewrites the previous draft directly, without in-text prompt contamination
+      text: pass === 1 ? payload.text : lastResultText,
+      refinementIssues: pass > 1 ? refinementIssues : undefined,
+      temperature: pass === 1 ? (payload.temperature || 0.65) : Math.min(0.85, (payload.temperature || 0.65) + 0.08)
+    };
 
-    if (pass > 1 && finalDetection && finalDetection.issues.length > 0) {
-      const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice)(?!\p{L})/giu.test(currentText);
-      const refinementGuidance = isItalian
-        ? `\n\n[DIRETTIVA DI AUTO-RAFFINAMENTO]: Nella bozza precedente i rilevatori IA (stile GPTZero/Copyleaks) hanno evidenziato:\n- ${finalDetection.issues.join('\n- ')}\n\nRiformula le frasi migliorando drasticamente la burstiness (alterna periodi lunghi e ricchi a frasi brevissime e incisive), elimina ogni formula prevedibile e restituisci SOLO la nuova riscrittura perfezionata.`
-        : `\n\n[AUTO-REFINEMENT DIRECTIVE]: In the previous draft, AI detectors (GPTZero/Copyleaks heuristics) flagged:\n- ${finalDetection.issues.join('\n- ')}\n\nDrastically improve sentence burstiness (mix concise punchy sentences with complex clauses), eliminate formulaic transitions, and return ONLY the perfected text.`;
-
-      currentPayload.text = lastResultText + refinementGuidance;
-      currentPayload.temperature = Math.min(1.0, (payload.temperature || 0.65) + (pass * 0.05));
-      if (currentPayload.aggression === 'light') currentPayload.aggression = 'medium';
-      else if (currentPayload.aggression === 'medium' && pass >= 3) currentPayload.aggression = 'aggressive';
-    }
+    if (currentPayload.aggression === 'light' && pass > 1) currentPayload.aggression = 'medium';
+    else if (currentPayload.aggression === 'medium' && pass >= 3) currentPayload.aggression = 'aggressive';
 
     lastResultText = await processHumanizeRequest(currentPayload, env);
     finalDetection = detectHumanity(lastResultText);
+    refinementIssues = finalDetection.issues;
 
     iterations.push({
       pass,

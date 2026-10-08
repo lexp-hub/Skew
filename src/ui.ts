@@ -365,8 +365,71 @@ export function renderDashboardHTML(): string {
     .heat-sent.mixed { background: rgba(234, 179, 8, 0.22); border-bottom: 2px solid #eab308; }
     .heat-sent.human { background: rgba(16, 185, 129, 0.20); border-bottom: 2px solid #10b981; }
 
-
-    /* Action Bar */
+    /* Progress Bar */
+    .progress-bar-container {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: none;
+    }
+    .progress-bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .progress-bar-track {
+      width: 100%;
+      height: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #06b6d4, #10b981);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+      transition: width 0.35s ease;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .btn-toggle-active {
+      background: rgba(16, 185, 129, 0.15) !important;
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+      font-weight: 700;
+    }
+    .citation-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .benchmark-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .benchmark-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: center;
+    }
+    .benchmark-val {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 2px 0;
+    }
     .action-bar {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -531,6 +594,17 @@ export function renderDashboardHTML(): string {
   <!-- Error banner -->
   <div id="errorBanner" class="error-banner"></div>
 
+  <!-- Progress Bar & Multi-detector status -->
+  <div id="progressWrapper" class="progress-bar-container">
+    <div class="progress-bar-header">
+      <span id="progressStepTitle">// AUTO-REFINING TEXT...</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+  </div>
+
   <!-- Workspace -->
   <main>
     <div class="workspace">
@@ -639,6 +713,40 @@ export function renderDashboardHTML(): string {
               </div>
             </div>
 
+            <!-- Multi-Detector Benchmarks -->
+            <div class="metric-box">
+              <b style="display:block; margin-bottom:8px;">MULTI-DETECTOR BENCHMARK ESTIMATES:</b>
+              <div class="benchmark-grid">
+                <div class="benchmark-card">
+                  <div style="color:var(--muted); font-size:10px;">GPTZERO</div>
+                  <div class="benchmark-val" id="bmGptZero" style="color:var(--accent);">--%</div>
+                  <div style="font-size:9px; color:var(--muted);" id="bmGptZeroVerdict">AWAITING</div>
+                </div>
+                <div class="benchmark-card">
+                  <div style="color:var(--muted); font-size:10px;">COPYLEAKS</div>
+                  <div class="benchmark-val" id="bmCopyleaks" style="color:#06b6d4;">--%</div>
+                  <div style="font-size:9px; color:var(--muted);" id="bmCopyleaksVerdict">AWAITING</div>
+                </div>
+                <div class="benchmark-card">
+                  <div style="color:var(--muted); font-size:10px;">TURNITIN (AI SIM)</div>
+                  <div class="benchmark-val" id="bmTurnitin" style="color:#f59e0b;">--%</div>
+                  <div style="font-size:9px; color:var(--muted);">AI SIMILARITY</div>
+                </div>
+                <div class="benchmark-card">
+                  <div style="color:var(--muted); font-size:10px;">PERPLEXITY & ENTROPY</div>
+                  <div class="benchmark-val" id="bmPerp" style="color:var(--accent);">--%</div>
+                  <div style="font-size:9px; color:var(--muted);">SYNTACTIC CADENCE</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-Refine Iterations Box -->
+            <div id="iterationHistoryBox" class="metric-box" style="display:none;">
+              <b style="display:block; margin-bottom:6px; color:var(--accent);">AUTOMATED REFINEMENT HISTORY:</b>
+              <div id="iterationHistoryList" style="font-size:11px;"></div>
+            </div>
+
+            <!-- Heatmap -->
             <div class="metric-box">
               <b style="display:block; margin-bottom:6px;">SENTENCE-BY-SENTENCE HEATMAP AUDIT:</b>
               <div style="color:var(--muted); font-size:10px; margin-bottom:10px;">
@@ -646,7 +754,14 @@ export function renderDashboardHTML(): string {
                 <span style="color:#eab308;">■ Yellow: Uncertain / Mixed</span> &nbsp;|&nbsp;
                 <span style="color:#ef4444;">■ Red: High AI Signature</span>
               </div>
-              <div id="detHeatmapContainer" class="heat-text">Click "VERIFY HUMANITY" below or run the humanizer to view sentence analysis.</div>
+              <div id="detHeatmapContainer" class="heat-text">Click "DETECTOR AUDIT" or run the humanizer to view sentence analysis.</div>
+            </div>
+
+            <!-- Legal Citations & Attribution Box -->
+            <div class="citation-box">
+              <b style="color:var(--text); display:block; margin-bottom:4px;">METHODOLOGY CITATIONS & LEGAL DISCLAIMER:</b>
+              Detection and burstiness heuristics are inspired by research methodologies from <b>GPTZero</b> (Perplexity & Burstiness analysis by Edward Tian), <b>Binoculars</b> (zero-shot LLM detection), and the <b>Wikipedia AI Cleanup</b> stylistic guidelines.
+              <span style="opacity:0.75; display:block; margin-top:4px;">Notice: Skew is an independent open-source project and is NOT affiliated with, endorsed by, or sponsored by GPTZero, Copyleaks, Turnitin, Sapling, or OpenAI. All trademarks belong to their respective owners.</span>
             </div>
           </div>
         </div>
@@ -664,13 +779,13 @@ export function renderDashboardHTML(): string {
 
     <!-- Action Bar -->
     <div class="action-bar">
-      <div style="color:var(--muted); font-size:11px;">
-        SHORTCUT: <code style="background:var(--card); border:1px solid var(--border); padding:2px 6px; color:#fff;">CTRL + ENTER</code>
-        &nbsp;•&nbsp; 100% PRIVATE EDGE EXECUTION
+      <div style="color:var(--muted); font-size:11px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span>SHORTCUT: <code style="background:var(--card); border:1px solid var(--border); padding:2px 6px; color:#fff;">CTRL + ENTER</code></span>
+        <button class="tag-sm btn-toggle-active" id="btnToggleAutoRefine" title="Auto-refines until human probability meets target">⚡ AUTO-REFINE: ON</button>
       </div>
       <div style="display:flex; gap:8px;">
         <button class="tag-sm" id="btnRepass" style="display:none; padding:8px 14px;">↺ RE-PASS</button>
-        <button class="tag-sm" id="btnVerifyScan" style="padding:8px 14px; background:#1e293b; color:#38bdf8; border:1px solid #0284c7;">🔍 VERIFY HUMANITY</button>
+        <button class="tag-sm" id="btnVerifyScan" style="padding:8px 14px; background:#1e293b; color:#38bdf8; border:1px solid #0284c7;">🔍 DETECTOR AUDIT</button>
         <button class="btn-humanize" id="btnRun">
           <span>HUMANIZE TEXT</span> ↵
         </button>
@@ -748,6 +863,7 @@ export function renderDashboardHTML(): string {
       apiKey: '',
       ollamaUrl: 'http://localhost:11434',
       temperature: 0.8,
+      autoRefine: true,
       originalMetrics: null,
       humanizedMetrics: null
     };
@@ -890,6 +1006,15 @@ export function renderDashboardHTML(): string {
         document.getElementById('detBurst').innerText = det.burstinessScore + '%';
         document.getElementById('detTtr').innerText = det.lexicalDiversity + '%';
 
+        if (det.benchmarks) {
+          document.getElementById('bmGptZero').innerText = det.benchmarks.gptZero.score + '%';
+          document.getElementById('bmGptZeroVerdict').innerText = det.benchmarks.gptZero.verdict;
+          document.getElementById('bmCopyleaks').innerText = det.benchmarks.copyleaks.humanScore + '%';
+          document.getElementById('bmCopyleaksVerdict').innerText = det.benchmarks.copyleaks.verdict;
+          document.getElementById('bmTurnitin').innerText = det.benchmarks.turnitinEstimate.aiPercentage + '%';
+          document.getElementById('bmPerp').innerText = (det.perplexityScore || 50) + '%';
+        }
+
         const badge = document.getElementById('detVerdictBadge');
         badge.innerText = det.verdict;
         if (det.humanScore >= 70) {
@@ -916,7 +1041,7 @@ export function renderDashboardHTML(): string {
       } catch (err) {
         console.error(err);
       } finally {
-        btn.innerText = '🔍 VERIFY HUMANITY';
+        btn.innerText = '🔍 DETECTOR AUDIT';
       }
     }
 
@@ -930,6 +1055,16 @@ export function renderDashboardHTML(): string {
       detectorView.style.display = 'flex';
       runDetectorScan();
     });
+
+    // Auto-Refine Toggle
+    const btnToggleAutoRefine = document.getElementById('btnToggleAutoRefine');
+    if (btnToggleAutoRefine) {
+      btnToggleAutoRefine.addEventListener('click', () => {
+        state.autoRefine = !state.autoRefine;
+        btnToggleAutoRefine.classList.toggle('btn-toggle-active', state.autoRefine);
+        btnToggleAutoRefine.innerText = state.autoRefine ? '⚡ AUTO-REFINE: ON' : '⚡ AUTO-REFINE: OFF';
+      });
+    }
 
     // Sample buttons
     document.getElementById('btnTestIt').addEventListener('click', () => { inputText.value = SAMPLE_IT; updateInputStats(); });
@@ -952,7 +1087,7 @@ export function renderDashboardHTML(): string {
       const blob = new Blob([outputText.value], {type:'text/markdown'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'desynt-humanized.md';
+      a.download = 'skew-humanized.md';
       a.click();
     });
 
@@ -975,6 +1110,34 @@ export function renderDashboardHTML(): string {
       errorBanner.style.display = 'none';
       const t0 = performance.now();
 
+      // Progress bar animation
+      const progressWrapper = document.getElementById('progressWrapper');
+      const progressBar = document.getElementById('progressBar');
+      const progressStepTitle = document.getElementById('progressStepTitle');
+      const progressPercent = document.getElementById('progressPercent');
+
+      progressWrapper.style.display = 'block';
+      progressBar.style.width = '25%';
+      progressPercent.innerText = '25%';
+      progressStepTitle.innerText = state.autoRefine 
+        ? '// PASS 1: REWRITING SYNTHETIC AI MARKERS...'
+        : '// GENERATING HUMANIZED REWRITE...';
+
+      let pVal = 25;
+      const progressTimer = setInterval(() => {
+        if (pVal < 85) {
+          pVal += 15;
+          progressBar.style.width = pVal + '%';
+          progressPercent.innerText = pVal + '%';
+          if (pVal >= 45 && state.autoRefine) {
+            progressStepTitle.innerText = '// BENCHMARKING CANDIDATE AGAINST GPTZERO & COPYLEAKS HEURISTICS...';
+          }
+          if (pVal >= 75 && state.autoRefine) {
+            progressStepTitle.innerText = '// PASS 2/3: RESTRUCTURING CADENCE & SYNTACTIC PERPLEXITY...';
+          }
+        }
+      }, 700);
+
       try {
         const res = await fetch('/api/humanize', {
           method: 'POST',
@@ -987,7 +1150,8 @@ export function renderDashboardHTML(): string {
             ollamaBaseUrl: state.ollamaUrl,
             mode: state.mode,
             aggression: state.aggression,
-            temperature: state.temperature
+            temperature: state.temperature,
+            autoRefine: state.autoRefine
           })
         });
 
@@ -998,6 +1162,13 @@ export function renderDashboardHTML(): string {
         if (!res.ok) {
           throw new Error(data.error || 'Transformation error');
         }
+
+        clearInterval(progressTimer);
+        progressBar.style.width = '100%';
+        progressPercent.innerText = '100%';
+        const finalScore = data.detection?.humanScore || data.humanizedMetrics?.humanScore || 90;
+        progressStepTitle.innerText = '// TARGET REACHED: ' + finalScore + '% HUMAN PROBABILITY (' + latency + 'ms)';
+        setTimeout(() => { progressWrapper.style.display = 'none'; }, 2200);
 
         outputText.value = data.humanizedText;
         document.getElementById('outWords').innerText = data.humanizedText.trim().split(/\s+/).length;
@@ -1021,10 +1192,68 @@ export function renderDashboardHTML(): string {
           }
         }
 
+        // Update AI Detector tab with full benchmarks & iterations
+        if (data.detection) {
+          const det = data.detection;
+          document.getElementById('detHumanScore').innerText = det.humanScore + '%';
+          document.getElementById('detAiScore').innerText = det.aiScore + '%';
+          document.getElementById('detBurst').innerText = det.burstinessScore + '%';
+          document.getElementById('detTtr').innerText = det.lexicalDiversity + '%';
+
+          const badge = document.getElementById('detVerdictBadge');
+          badge.innerText = det.verdict;
+          if (det.humanScore >= 70) {
+            badge.style.color = 'var(--accent)';
+            badge.style.borderColor = 'var(--accent)';
+          } else if (det.humanScore >= 40) {
+            badge.style.color = '#eab308';
+            badge.style.borderColor = '#eab308';
+          } else {
+            badge.style.color = '#ef4444';
+            badge.style.borderColor = '#ef4444';
+          }
+
+          if (det.benchmarks) {
+            document.getElementById('bmGptZero').innerText = det.benchmarks.gptZero.score + '%';
+            document.getElementById('bmGptZeroVerdict').innerText = det.benchmarks.gptZero.verdict;
+            document.getElementById('bmCopyleaks').innerText = det.benchmarks.copyleaks.humanScore + '%';
+            document.getElementById('bmCopyleaksVerdict').innerText = det.benchmarks.copyleaks.verdict;
+            document.getElementById('bmTurnitin').innerText = det.benchmarks.turnitinEstimate.aiPercentage + '%';
+            document.getElementById('bmPerp').innerText = (det.perplexityScore || 50) + '%';
+          }
+
+          // Auto-refine iterations display
+          const iterBox = document.getElementById('iterationHistoryBox');
+          const iterList = document.getElementById('iterationHistoryList');
+          if (data.iterations && data.iterations.length > 0) {
+            iterBox.style.display = 'block';
+            iterList.innerHTML = data.iterations.map(it => {
+              const color = it.humanScore >= 75 ? 'var(--accent)' : it.humanScore >= 50 ? '#eab308' : '#ef4444';
+              return '<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding:4px 0;">' +
+                '<span><b>Pass ' + it.pass + ':</b> ' + it.verdict + '</span>' +
+                '<span style="color:' + color + ';"><b>' + it.humanScore + '% Human</b> (Burst: ' + it.burstinessScore + '%, Perp: ' + it.perplexityScore + '%)</span>' +
+              '</div>';
+            }).join('');
+          } else {
+            iterBox.style.display = 'none';
+          }
+
+          // Heatmap
+          const heatContainer = document.getElementById('detHeatmapContainer');
+          if (det.sentences && det.sentences.length > 0) {
+            heatContainer.innerHTML = det.sentences.map((s) => {
+              const reasonsText = s.reasons.length > 0 ? ' [ ' + s.reasons.join(', ') + ' ]' : '';
+              return '<span class="heat-sent ' + s.classification + '" title="AI Prob: ' + s.aiProbability + '%' + reasonsText + '">' + s.text + '</span> ';
+            }).join('');
+          }
+        }
+
         if (state.activeTab === 'diff') {
           diffView.innerHTML = computeWordDiff(inputText.value, outputText.value);
         }
       } catch (err) {
+        clearInterval(progressTimer);
+        document.getElementById('progressWrapper').style.display = 'none';
         errorBanner.innerText = err.message;
         errorBanner.style.display = 'block';
       } finally {

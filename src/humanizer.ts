@@ -5,6 +5,7 @@
 
 import { localPrecisionHumanize } from './localEngine';
 import { getPromptContrastiveExamples, ITALIAN_AI_LEXICON, ENGLISH_AI_LEXICON, findLexiconAlternative } from './lexicon';
+import { detectHumanity, DetailedDetectorResult } from './detector';
 
 export type HumanizeMode = 'natural' | 'casual' | 'academic' | 'editorial' | 'executive';
 export type AggressionLevel = 'light' | 'medium' | 'aggressive';
@@ -455,4 +456,79 @@ export async function processHumanizeRequest(
 
   // Pass through the deterministic sanitization & harmonization pipeline
   return sanitizeAndHarmonizeOutput(rawOutput, isItalian, cleanInput);
+}
+
+export interface AutoRefineIteration {
+  pass: number;
+  text: string;
+  humanScore: number;
+  burstinessScore: number;
+  perplexityScore: number;
+  verdict: string;
+  issues: string[];
+}
+
+export interface AutoRefineResult {
+  humanizedText: string;
+  iterations: AutoRefineIteration[];
+  finalDetection: DetailedDetectorResult;
+}
+
+/**
+ * Automated Refinement Loop:
+ * Benchmarks text against multi-detector heuristics (GPTZero, Copyleaks, Turnitin),
+ * and automatically iterates rewriting until the target human score is achieved.
+ */
+export async function autoRefineHumanize(
+  payload: HumanizeRequestPayload & { targetScore?: number; maxPasses?: number },
+  env: any
+): Promise<AutoRefineResult> {
+  const targetScore = Math.min(99, Math.max(50, payload.targetScore || 85));
+  const maxPasses = Math.min(4, Math.max(1, payload.maxPasses || 3));
+  const iterations: AutoRefineIteration[] = [];
+
+  let currentText = payload.text;
+  let lastResultText = '';
+  let finalDetection: DetailedDetectorResult | null = null;
+
+  for (let pass = 1; pass <= maxPasses; pass++) {
+    let currentPayload = { ...payload };
+
+    if (pass > 1 && finalDetection && finalDetection.issues.length > 0) {
+      const isItalian = /(?<!\p{L})(?:di|che|il|la|per|un|in|con|non|del|della|dei|sono|questo|questa|dobbiamo|sviluppatori|architettura|codice)(?!\p{L})/giu.test(currentText);
+      const refinementGuidance = isItalian
+        ? `\n\n[DIRETTIVA DI AUTO-RAFFINAMENTO]: Nella bozza precedente i rilevatori IA (stile GPTZero/Copyleaks) hanno evidenziato:\n- ${finalDetection.issues.join('\n- ')}\n\nRiformula le frasi migliorando drasticamente la burstiness (alterna periodi lunghi e ricchi a frasi brevissime e incisive), elimina ogni formula prevedibile e restituisci SOLO la nuova riscrittura perfezionata.`
+        : `\n\n[AUTO-REFINEMENT DIRECTIVE]: In the previous draft, AI detectors (GPTZero/Copyleaks heuristics) flagged:\n- ${finalDetection.issues.join('\n- ')}\n\nDrastically improve sentence burstiness (mix concise punchy sentences with complex clauses), eliminate formulaic transitions, and return ONLY the perfected text.`;
+
+      currentPayload.text = lastResultText + refinementGuidance;
+      currentPayload.temperature = Math.min(1.0, (payload.temperature || 0.65) + (pass * 0.05));
+      if (currentPayload.aggression === 'light') currentPayload.aggression = 'medium';
+      else if (currentPayload.aggression === 'medium' && pass >= 3) currentPayload.aggression = 'aggressive';
+    }
+
+    lastResultText = await processHumanizeRequest(currentPayload, env);
+    finalDetection = detectHumanity(lastResultText);
+
+    iterations.push({
+      pass,
+      text: lastResultText,
+      humanScore: finalDetection.humanScore,
+      burstinessScore: finalDetection.burstinessScore,
+      perplexityScore: finalDetection.perplexityScore,
+      verdict: finalDetection.verdict,
+      issues: finalDetection.issues
+    });
+
+    const words = lastResultText.trim().split(/\s+/).filter(Boolean);
+    // Exit early if target score reached or if it's a short isolated phrase
+    if (finalDetection.humanScore >= targetScore || words.length <= 6) {
+      break;
+    }
+  }
+
+  return {
+    humanizedText: lastResultText,
+    iterations,
+    finalDetection: finalDetection || detectHumanity(lastResultText)
+  };
 }

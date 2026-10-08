@@ -3,7 +3,7 @@
  */
 
 import { renderDashboardHTML } from './ui';
-import { processHumanizeRequest } from './humanizer';
+import { processHumanizeRequest, autoRefineHumanize } from './humanizer';
 import { analyzeTextMetrics } from './metrics';
 import { detectHumanity } from './detector';
 
@@ -64,7 +64,31 @@ export default {
         }
 
         const originalMetrics = analyzeTextMetrics(text);
-        const humanizedText = await processHumanizeRequest(body, env);
+        const originalDetection = detectHumanity(text);
+
+        let humanizedText = '';
+        let iterations: any[] = [];
+        let detection: any = null;
+
+        if (body.autoRefine) {
+          const refineRes = await autoRefineHumanize(body, env);
+          humanizedText = refineRes.humanizedText;
+          iterations = refineRes.iterations;
+          detection = refineRes.finalDetection;
+        } else {
+          humanizedText = await processHumanizeRequest(body, env);
+          detection = detectHumanity(humanizedText);
+          iterations = [{
+            pass: 1,
+            text: humanizedText,
+            humanScore: detection.humanScore,
+            burstinessScore: detection.burstinessScore,
+            perplexityScore: detection.perplexityScore,
+            verdict: detection.verdict,
+            issues: detection.issues
+          }];
+        }
+
         const humanizedMetrics = analyzeTextMetrics(humanizedText);
 
         return new Response(
@@ -73,6 +97,9 @@ export default {
             humanizedText,
             originalMetrics,
             humanizedMetrics,
+            originalDetection,
+            detection,
+            iterations
           }),
           { headers: corsHeaders }
         );

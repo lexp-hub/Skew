@@ -134,17 +134,25 @@ Dismantles the robotic "Feature → Positive Adjective → Generic Benefit" copy
   -> "mantiene allineato e coerente lo stato dell'applicazione"
   (replaces vague semantic plausibility with exact engineering precision)
 
-================================================================================
-6. BUILT-IN AI DETECTOR & SENTENCE HEATMAP
+=================================================================================
+6. BUILT-IN AI DETECTOR & MULTI-DETECTOR BENCHMARKING
 ================================================================================
 Located in `src/detector.ts`:
-- Burstiness Index:
+- Burstiness Modeling (GPTZero Methodology):
   Measures sentence length Coefficient of Variation (CV = stdDev / mean).
   AI models rigidly cluster around 16-24 words per sentence.
-- Lexical Diversity:
-  Type-Token Ratio (unique words / total words).
+- Perplexity & Syntactic Entropy Modeling:
+  Evaluates vocabulary surprise, Hapax Legomena ratio (words occurring once),
+  and sentence-opening entropy (detecting formulaic connectors).
+- Lexical Diversity (Type-Token Ratio / TTR):
+  Ratio of unique vocabulary to total tokens.
 - Signature Cliché Density:
-  Weighted audit from `src/lexicon.ts`.
+  Weighted audit against Wikipedia AI signals and SaaS tropes in `src/lexicon.ts`.
+- Multi-Detector Benchmark Estimates:
+  * GPTZero: Composite of burstiness variance and perplexity modeling.
+  * Copyleaks: Statistical vocabulary repetition and formulaic patterns.
+  * Turnitin Estimate: Projected percentage of synthetic AI similarity.
+  * Sapling Estimate: Projected organic writing probability.
 - Sentence-by-Sentence Heatmap:
   Each sentence is evaluated independently:
   * 🟩 Human (<= 35% AI probability)
@@ -152,7 +160,19 @@ Located in `src/detector.ts`:
   * 🟥 AI (>= 65% AI probability with explicit reason tooltips)
 
 ================================================================================
-7. PRECISION OFFLINE HEURISTIC ENGINE
+7. AUTOMATED REFINEMENT LOOP (AUTO-REFINE)
+================================================================================
+Located in `src/humanizer.ts` (`autoRefineHumanize`):
+- Automates the loop: Generate -> Benchmark Audit -> Targeted Re-rewrite.
+- If a candidate draft fails the target human score (e.g. 85-90%):
+  1. The detector extracts concrete structural bottlenecks (issues list, flagged sentences).
+  2. Passes the candidate to the engine with explicit instructions to break uniform cadence,
+     expand lexical entropy, and remove residual cliché markers.
+  3. Repeats up to maxPasses (default: 3 passes) or until target score is reached.
+- Returns comprehensive pass-by-pass telemetry (`iterations` array).
+
+================================================================================
+8. PRECISION OFFLINE HEURISTIC ENGINE
 ================================================================================
 Located in `src/localEngine.ts`:
 - Operates at zero latency and zero token cost.
@@ -166,7 +186,7 @@ Located in `src/localEngine.ts`:
 - 3 aggression levels (`light`, `medium`, `aggressive`).
 
 ================================================================================
-8. API REFERENCE
+9. API REFERENCE
 ================================================================================
 1. POST /api/humanize
    Payload:
@@ -176,14 +196,18 @@ Located in `src/localEngine.ts`:
      "model"?: string,
      "mode"?: "natural" | "casual" | "academic" | "editorial" | "executive",
      "aggression"?: "light" | "medium" | "aggressive",
-     "temperature"?: number
+     "temperature"?: number,
+     "autoRefine"?: boolean,
+     "targetScore"?: number
    }
    Returns:
    {
      "success": true,
      "humanizedText": string,
      "originalMetrics": TextMetrics,
-     "humanizedMetrics": TextMetrics
+     "humanizedMetrics": TextMetrics,
+     "detection": DetailedDetectorResult,
+     "iterations": AutoRefineIteration[]
    }
 
 2. POST /api/detect
@@ -194,19 +218,25 @@ Located in `src/localEngine.ts`:
    Returns:
    {
      "success": true,
-     "detection": {
-       "humanScore": number,
-       "aiScore": number,
-       "verdict": string,
-       "burstinessScore": number,
-       "lexicalDiversity": number,
-       "clichesDetected": string[],
-       "sentences": SentenceAnalysis[]
-     }
+     "detection": DetailedDetectorResult
    }
 
 ================================================================================
-9. DEPLOYMENT & CONFIGURATION
+10. METHODOLOGY CITATIONS & LEGAL DISCLAIMER
+================================================================================
+Methodology Citations:
+- GPTZero (Edward Tian): Perplexity and Burstiness metrics analysis.
+- Binoculars (Hans et al.): Zero-shot cross-perplexity detection principles.
+- Wikipedia WikiProject AI Cleanup: 26 stylistic markers of LLM generation.
+
+Legal Disclaimer:
+Skew is an independent open-source project and is NOT affiliated with, sponsored by,
+or endorsed by GPTZero, Copyleaks, Turnitin, Sapling, or OpenAI. All brand names
+and trademarks belong to their respective owners and are mentioned exclusively for
+technical explanation and educational comparison.
+
+================================================================================
+11. DEPLOYMENT & CONFIGURATION
 ================================================================================
 Environment Variables (.dev.vars or Cloudflare Dashboard):
   CLOUDFLARE_ACCOUNT_ID=5409693716803be3df6614f05165ccdb

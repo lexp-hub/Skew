@@ -18,10 +18,22 @@
 
 - **Edge GPU Powered**: Uses `@cf/mistralai/mistral-small-3.1-24b-instruct` on Cloudflare Workers AI by default.
 - **Offline Heuristic NLP**: Zero-model deterministic engine that runs with 0 ms latency and zero token cost.
+- **Auto-Refinement Loop**: Iteratively benchmarks candidate text against AI detection heuristics until the target human probability is achieved.
 - **Wikipedia Editorial Standards**: Enforces the 26 structural rules from Wikipedia's *"Signs of AI writing"* (no shallow *-ing* riders, no *"Not X but Y"*, no inflated verbs).
-- **Built-in AI Detector**: Real-time sentence-by-sentence heatmap audit measuring burstiness, lexical diversity, and cliché density.
+- **Built-in AI Detector & Benchmarks**: Real-time sentence-by-sentence heatmap audit estimating metrics inspired by GPTZero, Copyleaks, and Turnitin.
 
 For architecture details, regex models, and full API documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
+
+---
+
+## Citations & Methodology Attribution
+
+Skew's detector evaluation and burstiness metrics are inspired by published open methodologies and research from:
+- **GPTZero** (Edward Tian) — Perplexity & Burstiness analysis framework.
+- **Binoculars & RoBERTa** — Zero-shot cross-entropy detection baselines.
+- **Wikipedia WikiProject AI Cleanup** — 26 stylistic markers of AI-generated prose.
+
+> **Legal Disclaimer:** Skew is an independent open-source tool and is **NOT** affiliated with, sponsored by, or endorsed by GPTZero, Copyleaks, Turnitin, Sapling, or OpenAI. All trademarks and brand names belong to their respective owners and are referenced solely for technical context and educational comparison.
 
 ---
 

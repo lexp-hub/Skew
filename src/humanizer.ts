@@ -84,9 +84,13 @@ REGOLE TASSATIVE DI SCRITTURA UMANA:
 4. SMONTA LE PERIFRASI E I VERBI GONFIATI (§12, §13, §18):
    - I chatbot evitano sistematicamente i verbi diretti: usano "rappresenta una sfida", "si pone come obiettivo", "si configura come". Trasformali in verbi diretti ("è una sfida", "punta a", "è").
    - VIETATE parole spia da IA: "svolge un ruolo cruciale/fondamentale", "gioca un ruolo chiave", "inoltre", "in conclusione", "tassello essenziale", "viaggio trasformativo", "mosaico di", "a 360 gradi", "alla luce di ciò".
-5. PUREZZA LINGUISTICA AL 100%:
+5. NO COPYWRITING DA BROCHURE SAAS O SCHEMA "FEATURE -> BENEFICIO GENERICO":
+   - VIETATE le collocazioni pubblicitarie vuote: "fondersi perfettamente nel flusso di lavoro", "architettura snella", "reattività istantanea", "interfaccia pulita e intuitiva", "con un semplice clic".
+   - VIETATA la catena di connettori funzionali: "permettendo di monitorare...", "consentendo di gestire...", "assicurando che...". Esprimi ciò che il software fa con verbi finiti concreti ("mostra i parametri", "salva i file in locale").
+   - PRECISIONE TECNICA > PLAUSIBILITÀ VAGA: non usare espressioni che suonano plausibili ma non dicono nulla (es. "assicura uniformità in ogni sessione" -> specifica che "mantiene coerente lo stato dell'applicazione").
+6. PUREZZA LINGUISTICA AL 100%:
    - Scrivi in italiano naturale e corretto. Non inserire MAI titoli, slogan o motti in lingua inglese a meno che non siano termini tecnici originali (es. "debug", "deployment").
-6. ZERO PREAMBOLI O CHATTER:
+7. ZERO PREAMBOLI O CHATTER:
    - VIETATO iniziare con "Ecco il testo:", "Certamente,", "Ecco la riscrittura:" o formule simili.
    - VIETATO inserire note finali, elenchi di spiegazioni o resoconti sulle modifiche apportate.
    - RESTITUISCI ESCLUSIVAMENTE IL TESTO FINALE RISCRITTO.

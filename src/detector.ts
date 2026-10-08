@@ -150,6 +150,18 @@ export function detectHumanity(text: string): DetailedDetectorResult {
       reasons.push("Trailing shallow participle / gerund rider");
     }
 
+    // Check functional connector chains (feature -> benefit trope)
+    if (/(?:permettendo di|consentendo di|assicurando che|assicura uniformità|garantendo di)/i.test(s)) {
+      sAiProb += 25;
+      reasons.push("Feature -> generic benefit hook (permettendo/consentendo/assicura)");
+    }
+
+    // Check tech marketing brochure colocations
+    if (/(?:fondersi perfettamente|architettura snella|reattività istantanea|pulita e intuitiva|semplice clic|semplice click)/i.test(s)) {
+      sAiProb += 30;
+      reasons.push("Generic SaaS / tech marketing brochure cliché");
+    }
+
     // Check robotic connectors
     if (/^(?:Inoltre|In conclusione|Pertanto|Furthermore|Moreover|In conclusion),/i.test(s)) {
       sAiProb += 30;
@@ -212,3 +224,4 @@ export function detectHumanity(text: string): DetailedDetectorResult {
     }
   };
 }
+

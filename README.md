@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="banner.svg" alt="Skew AI Humanizer Banner" width="100%" />
+  <img src="logo.svg" alt="Skew Logo" width="140" />
   <p align="center">
-    <strong>Minimalist, Privacy-First AI Text Humanizer &amp; Detection Engine on Cloudflare Workers</strong>
+    <strong>Minimalist AI Text Humanizer &amp; Humanity Detector on Cloudflare Workers</strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/Platform-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers" />
@@ -14,124 +14,70 @@
 
 ---
 
-## Panoramica
+## What is Skew?
 
-**Skew** è un motore di riscrittura, umanizzazione e rilevamento testuale open source, progettato per girare interamente all'Edge su **Cloudflare Workers**. 
+**Skew** is a lightweight, edge-native text humanizer and AI detector built on Cloudflare Workers. It strips synthetic chatbot markers, generic SaaS brochure clichés, and rigid transitional formulas, rewriting text with authentic human cadence.
 
-Sfrutta il modello **Mistral Small 3.1 24B** (`@cf/mistralai/mistral-small-3.1-24b-instruct`) via GPU edge di Cloudflare Workers AI per ottenere un italiano autentico, privo di anglicismi artificiali e ricco di naturalezza stilistica, combinandolo con un **motore locale euristico deterministico** e un **rilevatore di umanità integrato** con analisi frase per frase.
+- **Edge GPU Powered**: Uses `@cf/mistralai/mistral-small-3.1-24b-instruct` on Cloudflare Workers AI by default.
+- **Offline Heuristic NLP**: Zero-model deterministic engine that runs with 0 ms latency and zero token cost.
+- **Wikipedia Editorial Standards**: Enforces the 26 structural rules from Wikipedia's *"Signs of AI writing"* (no shallow *-ing* riders, no *"Not X but Y"*, no inflated verbs).
+- **Built-in AI Detector**: Real-time sentence-by-sentence heatmap audit measuring burstiness, lexical diversity, and cliché density.
 
----
-
-## Caratteristiche Principali
-
-- ⚡ **Cloudflare Workers AI Nativo (Default: Mistral Small 3.1 24B)**:
-  - Esecuzione GPU a bassa latenza su rete Edge globale.
-  - Oltre a Mistral Small, supporta Meta Llama 3.3 70B Fast, Llama 4 Scout 17B e Qwen 2.5 Coder 32B.
-- 📖 **26 Standard Editoriali di Wikipedia / Blader**:
-  - Rimuove sistematicamente i 26 segnali rivelatori dei chatbot: gerundi di coda (*shallow -ing riders*), importanza gonfiata, connettivi meccanici (*"inoltre"*, *"in conclusione"*), false simmetrie (*"non solo X ma Y"*) e triadi forzate.
-- 🎯 **Bando al Copywriting da Brochure SaaS & Schema "Feature $\rightarrow$ Beneficio Generico"**:
-  - Smonta le collocazioni vuote da marketing (*"fondersi perfettamente"*, *"architettura snella"*, *"reattività istantanea"*, *"con un semplice clic"*) e ripristina la precisione tecnica ingegneristica (*"mantiene allineato lo stato dell'applicazione"*).
-- 🛡️ **AI Detector Integrato & Heatmap Frase per Frase**:
-  - Scansiona in tempo reale Burstiness (Coeff. di Variazione della lunghezza dei periodi), Diversità Lessicale (TTR) e densità di cliché.
-  - Heatmap visuale interattiva: 🟩 Verde (Umano), 🟨 Giallo (Misto / Dubbio), 🟥 Rosso (Firma IA evidente).
-- 🔒 **Motore Locale Heuristic Offline (Zero Modelli / Zero Costi Token)**:
-  - Funziona offline a latenza zero tramite regole NLP deterministiche, de-nominalizzazioni e bilanciamento attivo della cadenza.
-- 🧩 **Zero Dipendenze Runtime Esterne**:
-  - Compilato in un singolo Worker autosufficiente con dashboard scura in stile monospace (`wrangler dev` / `wrangler deploy`).
+For in-depth architecture, regex models, and pipeline specifications, see [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ---
 
-## Architettura del Sistema
+## Quickstart
 
-```
-                      ┌────────────────────────────────────────┐
-                      │            Source Text Input           │
-                      └──────────────────┬─────────────────────┘
-                                         │
-                   ┌─────────────────────┴─────────────────────┐
-                   ▼                                           ▼
-       ┌───────────────────────┐                   ┌───────────────────────┐
-       │  Cloudflare Workers AI │                   │ Local Heuristic Engine │
-       │   (Mistral Small 3.1) │                   │  (Deterministic NLP)  │
-       └───────────┬───────────┘                   └───────────┬───────────┘
-                   │                                           │
-                   └─────────────────────┬─────────────────────┘
-                                         ▼
-                      ┌────────────────────────────────────────┐
-                      │    Deterministic Output Sanitizer      │
-                      │  (Strips chatter & stubborn clichés)   │
-                      └──────────────────┬─────────────────────┘
-                                         ▼
-                      ┌────────────────────────────────────────┐
-                      │  AI Detector & Sentence Heatmap Audit  │
-                      └──────────────────┬─────────────────────┘
-                                         ▼
-                      ┌────────────────────────────────────────┐
-                      │     Clean, Humanized & Scored Text     │
-                      └────────────────────────────────────────┘
-```
+### 1. Environment Setup
 
----
-
-## Configurazione & Credenziali
-
-Configura le variabili d'ambiente nel file `.dev.vars` (per sviluppo locale) o nel cruscotto di Cloudflare Workers:
+Configure your Cloudflare credentials in `.dev.vars` (for local development) or via `wrangler secret`:
 
 ```env
 CLOUDFLARE_ACCOUNT_ID=5409693716803be3df6614f05165ccdb
-CLOUDFLARE_API_TOKEN=il_tuo_token_workers_ai
+CLOUDFLARE_API_TOKEN=your_workers_ai_token
 CLOUDFLARE_MODEL=@cf/mistralai/mistral-small-3.1-24b-instruct
 ```
 
-> **Nota**: È possibile salvare provider e chiavi API alternative (Groq, OpenAI, Anthropic, Gemini, OpenRouter o Ollama locale) direttamente nel browser tramite il pulsante `⚙ CONFIG [F2]`.
-
----
-
-## API Endpoints
-
-### 1. `POST /api/humanize`
-Riscrive e umanizza il testo rimuovendo cliché e strutture artificiali da IA.
+### 2. Run & Deploy
 
 ```bash
-curl -X POST https://tuo-worker.workers.dev/api/humanize \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "È fondamentale adottare un approccio modulare, minimizzando il debito tecnico...",
-    "provider": "cf-ai",
-    "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
-    "mode": "natural",
-    "aggression": "medium"
-  }'
-```
-
-### 2. `POST /api/detect`
-Verifica l'umanità del testo e genera l'audit con punteggio e heatmap per ogni frase.
-
-```bash
-curl -X POST https://tuo-worker.workers.dev/api/detect \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Un modulo costruito per fondersi perfettamente nel flusso di lavoro quotidiano..."
-  }'
-```
-
----
-
-## Sviluppo Locale & Deploy
-
-```bash
-# Installa le dipendenze
+# Install dependencies
 npm install
 
-# Avvia l'ambiente di sviluppo locale con hot-reload
+# Start local edge worker
 npm run dev
 
-# Effettua il deploy su Cloudflare Workers
+# Deploy to Cloudflare Workers
 npm run deploy
 ```
 
 ---
 
-## Licenza
+## API
 
-Distribuito sotto licenza [MIT](LICENSE).
+### Humanize: `POST /api/humanize`
+
+```json
+{
+  "text": "L'ingegneria del software moderna affronta costantemente il problema della complessità architetturale...",
+  "provider": "cf-ai",
+  "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  "mode": "natural",
+  "aggression": "medium"
+}
+```
+
+### Detect: `POST /api/detect`
+
+```json
+{
+  "text": "Un modulo costruito per fondersi perfettamente nel flusso di lavoro quotidiano..."
+}
+```
+
+---
+
+## License
+
+[MIT](LICENSE)

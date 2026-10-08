@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c0d12"/>
+      <stop offset="50%" stop-color="#13151c"/>
+      <stop offset="100%" stop-color="#0c0d12"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#242735" stroke-width="0.75" stroke-opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Background with grid -->
+  <rect width="1200" height="360" fill="url(#bg)"/>
+  <rect width="1200" height="360" fill="url(#grid)"/>
+
+  <!-- Border accent lines -->
+  <line x1="0" y1="0" x2="1200" y2="0" stroke="#10b981" stroke-width="3" stroke-opacity="0.8"/>
+  <line x1="0" y1="360" x2="1200" y2="360" stroke="#242735" stroke-width="2"/>
+
+  <!-- Glow effect -->
+  <circle cx="600" cy="180" r="160" fill="#10b981" opacity="0.06" filter="blur(40px)"/>
+
+  <!-- Logo and Typography -->
+  <g transform="translate(600, 140)" text-anchor="middle">
+    <!-- Brand tag -->
+    <rect x="-80" y="-85" width="160" height="26" fill="#181a24" stroke="#10b981" stroke-width="1.5" rx="3"/>
+    <text x="0" y="-68" fill="#10b981" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="11" font-weight="700" letter-spacing="2.5">CLOUDFLARE EDGE</text>
+
+    <!-- Main Title -->
+    <text x="0" y="5" fill="#f8fafc" font-family="'JetBrains Mono', 'Fira Code', -apple-system, monospace" font-size="64" font-weight="900" letter-spacing="6">SKEW</text>
+
+    <!-- Subtitle -->
+    <text x="0" y="48" fill="#94a3b8" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="16" font-weight="500" letter-spacing="1.5">
+      MINIMALIST AI HUMANIZER &amp; DETECTION ENGINE
+    </text>
+
+    <!-- Feature pill items -->
+    <g transform="translate(0, 100)" font-family="'JetBrains Mono', monospace" font-size="12" fill="#64748b">
+      <text x="-260" y="0">⚡ Mistral Small 3.1 24B</text>
+      <text x="-80" y="0">•</text>
+      <text x="0" y="0">📖 26 Wikipedia Editorial Rules</text>
+      <text x="140" y="0">•</text>
+      <text x="260" y="0">🛡️ Built-in AI Detector</text>
+    </g>
+  </g>
+</svg>

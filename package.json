@@ -1,0 +1,16 @@
+{
+  "name": "skew",
+  "version": "0.1.0",
+  "description": "Minimalist open-source AI text humanizer on Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250204.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.107.3"
+  }
+}
